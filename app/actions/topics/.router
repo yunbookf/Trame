@@ -1,0 +1,3 @@
+GET     /{#id}/                     .topic.php
+POST    /{#id}/replies/             .reply.POST.php
+POST    /replies/                   .test/fff.php

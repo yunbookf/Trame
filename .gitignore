@@ -1,0 +1,14 @@
+/temp/*
+/logs/*
+/data/*
+/etc/*.ini
+/etc/*.json
+!/temp/README.md
+!/logs/README.md
+!/data/README.md
+/.vscode/
+/.settings/
+/.project
+/.buildpath
+/tools/node_modules/
+

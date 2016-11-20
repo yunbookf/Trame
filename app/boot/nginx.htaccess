@@ -1,0 +1,35 @@
+
+# This file introduces rewrite rules of Nginx to enable the URI mode.
+# Usage: 
+#
+#     Copy this file to root of LRT framework as name '.htaccess', and then
+# include the new file in your virtual host configuration file.
+#
+# Windows:
+#
+#	mklink /H .htaccess boot\.htaccess\nginx-uri.htaccess
+#
+# Linux:
+#
+#	ln boot\.htaccess\nginx-uri.htaccess .htaccess
+#
+
+location ~ /\.ht {
+    deny all;
+}
+
+location ~ ^/(bin|boot|dev|lib|var|view|tools|model) {
+    deny all;
+}
+
+error_page  400             /public/common/400.html;
+error_page  401             /public/common/401.html;
+error_page  403             /public/common/403.html;
+error_page  404             /public/common/404.html;
+error_page  405             /public/common/405.html;
+error_page  500             /public/common/500.html;
+error_page  503             /public/common/503.html;
+
+rewrite ^/public/(.+)$      /public/$1  last;
+
+rewrite ^(.+)$   	        /index.php?__uri=$1 last;

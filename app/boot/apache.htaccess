@@ -1,0 +1,28 @@
+
+# This file introduces rewrite rules of Apache to enable the URI mode.
+# Usage: 
+#
+#     Copy this file to root of LRT framework as name '.htaccess', and then
+# include the new file in your virtual host configuration file.
+#
+# Windows:
+#
+#	mklink /H .htaccess boot\.htaccess\apache.htaccess
+#
+# Linux:
+#
+#	ln boot\.htaccess\apache.htaccess .htaccess
+#
+
+RewriteEngine on
+
+ErrorDocument  400           	/public/common/400.html
+ErrorDocument  401             	/public/common/401.html
+ErrorDocument  403             	/public/common/403.html
+ErrorDocument  404             	/public/common/404.html
+ErrorDocument  500             	/public/common/500.html
+ErrorDocument  503             	/public/common/503.html
+
+RewriteRule ^public/(.+)$     	public/$1 [L]
+
+RewriteRule ^.*$   	            index.php?__uri=/$0 [QSA,L]

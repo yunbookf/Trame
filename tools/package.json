@@ -1,0 +1,19 @@
+{
+  "name": "trame-tools",
+  "version": "0.1.0-pre-1",
+  "description": "A tools set for Trame framework.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.1.2",
+    "langext": "^1.2.1-rc-1"
+  },
+  "devDependencies": {
+    "@types/async": "^2.0.33",
+    "@types/node": "^6.0.48"
+  }
+}
