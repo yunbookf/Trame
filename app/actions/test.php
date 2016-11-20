@@ -8,7 +8,7 @@ namespace T\Action;
 class DevTest extends IAction {
 
     public function main(array $args): int {
-        echo 'testing';
+        throw new \T\Msg\HTTPError(0, \T\HTTP\INTERNAL_ERROR);
         return 0;
     }
 }
