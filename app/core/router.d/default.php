@@ -1,6 +1,8 @@
 <?php
 declare(strict_types = 1);
 
+namespace T;
+
 return function (string $uri, string $method): array {
 
     $srt = require ('app/boot/static-router-table.php');
@@ -38,8 +40,13 @@ return function (string $uri, string $method): array {
         }
     }
 
+    if ($path === null) {
+
+        throw new Msg\RouteFailure('', \T\HTTP\NOT_FOUND);
+    }
+
     return [
-        'path' => $path === null ? 'app/actions/.error/404.php' : $path,
+        'path' => $path,
         'args' => $args
     ];
 };

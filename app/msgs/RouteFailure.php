@@ -5,12 +5,11 @@ namespace T\Msg;
 
 use T\Core\IMessage;
 
-class Redirection extends IMessage {
+class RouteFailure extends IMessage {
 
     public function handle() {
 
         header('location: ' . $this->getMessage());
-    
     }
 
 }

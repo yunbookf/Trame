@@ -1,6 +1,6 @@
 <?php
 
-namespace T\msg;
+namespace T\Msg;
 
 use T\Core\IMessage;
 
