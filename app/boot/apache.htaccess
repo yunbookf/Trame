@@ -19,9 +19,14 @@ RewriteEngine on
 ErrorDocument  400           	public/error/400.html
 ErrorDocument  401             	public/error/401.html
 ErrorDocument  403             	public/error/403.html
-ErrorDocument  404             	public/error/404.html
-ErrorDocument  500             	public/error/500.html
-ErrorDocument  503             	public/error/503.html
+ErrorDocument  404              public/error/404.html
+ErrorDocument  405              public/error/405.html
+ErrorDocument  406              public/error/406.html
+ErrorDocument  500              public/error/500.html
+ErrorDocument  501              public/error/501.html
+ErrorDocument  502              public/error/502.html
+ErrorDocument  503              public/error/503.html
+ErrorDocument  504              public/error/504.html
 
 RewriteRule ^public/(.+)$     	public/$1 [L]
 

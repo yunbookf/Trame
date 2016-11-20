@@ -5,12 +5,12 @@ namespace T\Action;
  * URI: /
  */
 
-class HTTPError502 extends IAction {
+class HTTPError501 extends IAction {
 
     public function main(array $args): int {
-        header('HTTP/1.1 502 BAD GATEWAY');
+        header('HTTP/1.1 501 NOT IMPLEMENTED');
         return 0;
     }
 }
 
-return HTTPError502::class;
+return HTTPError501::class;

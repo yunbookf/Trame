@@ -27,9 +27,12 @@ error_page  401             /public/error/401.html;
 error_page  403             /public/error/403.html;
 error_page  404             /public/error/404.html;
 error_page  405             /public/error/405.html;
+error_page  406             /public/error/406.html;
 error_page  500             /public/error/500.html;
+error_page  501             /public/error/501.html;
 error_page  502             /public/error/502.html;
 error_page  503             /public/error/503.html;
+error_page  504             /public/error/504.html;
 
 rewrite ^/public/(.+)$      /public/$1  last;
 

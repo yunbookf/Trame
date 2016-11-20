@@ -5,12 +5,12 @@ namespace T\Action;
  * URI: /
  */
 
-class HTTPError502 extends IAction {
+class HTTPError406 extends IAction {
 
     public function main(array $args): int {
-        header('HTTP/1.1 502 BAD GATEWAY');
+        header('HTTP/1.1 405 METHOD NOT ALLOWED');
         return 0;
     }
 }
 
-return HTTPError502::class;
+return HTTPError406::class;
