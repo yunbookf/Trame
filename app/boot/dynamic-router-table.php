@@ -1,8 +1,5 @@
 <?php
 return [
-    'ALL' => [
-
-    ],
     'GET' => [
         [
             'expr' => '/^\\/topics\\/(\\d+)$/',
@@ -16,11 +13,5 @@ return [
             'path' => 'app/actions/topics/.reply.POST.php',
             'vars' => ["id"]
         ]
-    ],
-    'PUT' => [
-
-    ],
-    'DELETE' => [
-
     ]
 ];

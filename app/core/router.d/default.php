@@ -1,7 +1,7 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types = 1);
 
-return function(string $uri, string $method): array {
+return function (string $uri, string $method): array {
 
     $srt = require ('app/boot/static-router-table.php');
 
@@ -14,19 +14,25 @@ return function(string $uri, string $method): array {
 
     $path = $srt['ALL'][$uri] ?? ($srt[$method][$uri] ?? null);
 
-    if ($path === null) {
+    if ($path === null && \T\Config\ROUTER['dynamic-disabled'] === false) {
 
         $drt = require ('app/boot/dynamic-router-table.php');
 
-        foreach ($drt[$method] as $rule) {
+        foreach ([
+            'ALL',
+            $method
+        ] as $m) {
 
-            if (preg_match($rule['expr'], $uri, $matches)) {
+            foreach ($drt[$m] as $rule) {
 
-                $path = $rule['path'];
+                if (preg_match($rule['expr'], $uri, $matches)) {
 
-                foreach ($rule['vars'] as $index => $varName) {
+                    $path = $rule['path'];
 
-                    $args[$varName] = $matches[$index + 1];
+                    foreach ($rule['vars'] as $index => $varName) {
+
+                        $args[$varName] = $matches[$index + 1];
+                    }
                 }
             }
         }

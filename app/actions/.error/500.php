@@ -5,12 +5,12 @@ namespace T\Action;
  * URI: /
  */
 
-class HTTPError404 extends IAction {
+class HTTPError500 extends IAction {
 
     public function main(array $args): int {
-        header('HTTP/1.1 404 NOT FOUND');
+        header('HTTP/1.1 500 INTERNAL ERROR');
         return 0;
     }
 }
 
-return HTTPError404::class;
+return HTTPError500::class;

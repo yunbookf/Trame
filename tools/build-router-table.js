@@ -8,7 +8,8 @@ const ACTIONS_ROOT = "app/actions";
 const SRT_PATH = "app/boot/static-router-table.php";
 const DRT_PATH = "app/boot/dynamic-router-table.php";
 const TAB = "    ";
-let actionMethodMap = {};
+let preTaskDate = new Date().getTime();
+let buildTask = [];
 let filesEntityTable = [];
 let actionFiles = [];
 let routerFiles = [];
@@ -65,6 +66,7 @@ let strictMode = false;
 let ignoreInvalidFile = false;
 let enabledDynamic = true;
 let enabledAPCu = false;
+let watchMode = false;
 /**
  * These methods are enabled by default.
  */
@@ -89,6 +91,9 @@ for (let i = 2; i < process.argv.length; i++) {
         case "--strict-mode":
             console.info("    * Strict Mode is on.\n");
             strictMode = true;
+            break;
+        case "--watch":
+            watchMode = true;
             break;
         case "--ignore-other-files":
             ignoreInvalidFile = true;
@@ -356,9 +361,11 @@ function generateStaticTable(root, tablePath, callback) {
             let path = table.simple[uri];
             maps.push(`${TAB.repeat(2)}'${uri}' => '${path}'`);
         }
-        tables.push(`${TAB}'${method}' => [
+        if (maps.length > 0) {
+            tables.push(`${TAB}'${method}' => [
 ${maps.join(",\n")}
 ${TAB}]`);
+        }
     }
     let srt = `<?php
 return [
@@ -381,9 +388,11 @@ ${TAB.repeat(3)}'path' => '${dr.path}',
 ${TAB.repeat(3)}'vars' => ${JSON.stringify(dr.variables)}
 ${TAB.repeat(2)}]`);
         }
-        tables.push(`${TAB}'${method}' => [
+        if (maps.length > 0) {
+            tables.push(`${TAB}'${method}' => [
 ${maps.join(",\n")}
 ${TAB}]`);
+        }
     }
     let drt = `<?php
 return [
@@ -392,40 +401,75 @@ ${tables.join(",\n")}
 `;
     NodeFS.writeFile(tablePath, drt, callback);
 }
-async.series([
-    function (next) {
-        scanRoutableFiles(ACTIONS_ROOT, next);
-    },
-    function (next) {
-        console.info(`File scan completed, found:\n
+function startBuilder(ts) {
+    if (ts !== preTaskDate) {
+        return;
+    }
+    buildTask.push(ts);
+    if (buildTask.length > 1) {
+        return;
+    }
+    async.series([
+        function (next) {
+            filesEntityTable = [];
+            actionFiles = [];
+            routerFiles = [];
+            routerTables = {};
+            for (let method of HTTP_METHODS) {
+                if (optHTTPMethodStatus[method]) {
+                    routerTables[method] = new RouterTable(method);
+                }
+            }
+            next();
+        },
+        function (next) {
+            scanRoutableFiles(ACTIONS_ROOT, next);
+        },
+        function (next) {
+            console.info(`File scan completed, found:\n
     ${filesEntityTable.length} Actions files
     ${actionFiles.length} Simple Actions files
     ${routerFiles.length} Advanced Router files\n
 Building Simple Router Table:\n`);
-        buildSimpleTable(ACTIONS_ROOT, next);
-    },
-    function (next) {
-        if (enabledDynamic) {
-            console.info("\nBuilding Dynamic Router Table:\n");
-            buildDynamicTable(ACTIONS_ROOT, next);
+            buildSimpleTable(ACTIONS_ROOT, next);
+        },
+        function (next) {
+            if (enabledDynamic) {
+                console.info("\nBuilding Dynamic Router Table:\n");
+                buildDynamicTable(ACTIONS_ROOT, next);
+            }
+            else {
+                next();
+            }
+        },
+        function (next) {
+            generateStaticTable(ACTIONS_ROOT, SRT_PATH, next);
+        },
+        function (next) {
+            generateDynamicTable(ACTIONS_ROOT, DRT_PATH, next);
+        }
+    ], function (err) {
+        console.log("");
+        if (err) {
+            console.error(`[!] Error [${err.name}]: ${err.message}.`);
         }
         else {
-            next();
+            console.info("Router table has been successfully built.");
         }
-    },
-    function (next) {
-        generateStaticTable(ACTIONS_ROOT, SRT_PATH, next);
-    },
-    function (next) {
-        generateDynamicTable(ACTIONS_ROOT, DRT_PATH, next);
+        buildTask.shift();
+        if (buildTask.length > 0) {
+            preTaskDate = buildTask[0];
+            startBuilder(preTaskDate);
+        }
+    });
+}
+watchMode && NodeFS.watch(ACTIONS_ROOT, function (event, file) {
+    if (event === "change") {
+        return;
     }
-], function (err) {
-    console.log("");
-    if (err) {
-        console.error(`[!] Error [${err.name}]: ${err.message}.`);
-    }
-    else {
-        console.info("Router table has been successfully built.");
-    }
+    console.info(`\nFile changes detected, a new built task started.\n`);
+    preTaskDate = new Date().getTime();
+    setTimeout(startBuilder, 500, preTaskDate);
 });
+startBuilder(preTaskDate);
 //# sourceMappingURL=build-router-table.js.map

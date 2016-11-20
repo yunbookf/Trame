@@ -12,6 +12,9 @@ const SRT_PATH: string = "app/boot/static-router-table.php";
 const DRT_PATH: string = "app/boot/dynamic-router-table.php";
 const TAB: string = "    ";
 
+let preTaskDate: number = new Date().getTime();
+let buildTask: number[] = [];
+
 interface HTTPMethodTable<T> extends Dictionary<T> {
     "ALL"?: T;
     "GET"?: T;
@@ -24,7 +27,6 @@ interface HTTPMethodTable<T> extends Dictionary<T> {
     "CONNECT"?: T;
 }
 
-let actionMethodMap: Dictionary<HTTPMethodTable<boolean>> = {};
 let filesEntityTable: string[] = [];
 let actionFiles: string[] = [];
 let routerFiles: string[] = [];
@@ -128,6 +130,8 @@ let enabledDynamic: boolean = true;
 
 let enabledAPCu: boolean = false;
 
+let watchMode: boolean = false;
+
 /**
  * These methods are enabled by default.
  */
@@ -162,6 +166,12 @@ for (let i: number = 2; i < process.argv.length; i++) {
         console.info("    * Strict Mode is on.\n");
 
         strictMode = true;
+
+        break;
+
+    case "--watch":
+
+        watchMode = true;
 
         break;
 
@@ -598,10 +608,13 @@ function generateStaticTable(root: string, tablePath: string, callback: ErrorCal
 
         }
 
-        tables.push(`${TAB}'${method}' => [
+        if (maps.length > 0) {
+            tables.push(
+`${TAB}'${method}' => [
 ${maps.join(",\n")}
-${TAB}]`);
-
+${TAB}]`
+            );
+        }
     }
 
     let srt: string = `<?php
@@ -630,18 +643,23 @@ function generateDynamicTable(root: string, tablePath: string, callback: ErrorCa
 
             exp = `/${exp.substr(1, exp.length - 2)}/`;
 
-            maps.push(`${TAB.repeat(2)}[
+            maps.push(
+`${TAB.repeat(2)}[
 ${TAB.repeat(3)}'expr' => '${exp}',
 ${TAB.repeat(3)}'path' => '${dr.path}',
 ${TAB.repeat(3)}'vars' => ${JSON.stringify(dr.variables)}
-${TAB.repeat(2)}]`);
+${TAB.repeat(2)}]`
+            );
 
         }
 
-        tables.push(`${TAB}'${method}' => [
+        if (maps.length > 0) {
+            tables.push(
+`${TAB}'${method}' => [
 ${maps.join(",\n")}
-${TAB}]`);
-
+${TAB}]`
+            );
+        }
     }
 
     let drt: string = `<?php
@@ -654,59 +672,120 @@ ${tables.join(",\n")}
 
 }
 
-async.series([
+function startBuilder(ts: number) {
 
-    function (next: ErrorCallback): void {
+    if (ts !== preTaskDate) {
 
-        scanRoutableFiles(ACTIONS_ROOT, next);
-    },
+        return;
+    }
 
-    function (next: ErrorCallback): void {
+    buildTask.push(ts);
 
-        console.info(`File scan completed, found:\n
+    if (buildTask.length > 1) {
+
+        return;
+    }
+
+    async.series([
+
+        function (next: ErrorCallback): void {
+
+            filesEntityTable  = [];
+            actionFiles = [];
+            routerFiles = [];
+
+            routerTables = {};
+
+            for (let method of HTTP_METHODS) {
+
+                if (optHTTPMethodStatus[method]) {
+
+                    routerTables[method] = new RouterTable(method);
+                }
+            }
+
+            next();
+        },
+
+        function (next: ErrorCallback): void {
+
+            scanRoutableFiles(ACTIONS_ROOT, next);
+        },
+
+        function (next: ErrorCallback): void {
+
+            console.info(
+`File scan completed, found:\n
     ${filesEntityTable.length} Actions files
     ${actionFiles.length} Simple Actions files
     ${routerFiles.length} Advanced Router files\n
-Building Simple Router Table:\n`);
+Building Simple Router Table:\n`
+            );
 
-        buildSimpleTable(ACTIONS_ROOT, next);
-    },
+            buildSimpleTable(ACTIONS_ROOT, next);
+        },
 
-    function (next: ErrorCallback): void {
+        function (next: ErrorCallback): void {
 
-        if (enabledDynamic) {
+            if (enabledDynamic) {
 
-            console.info("\nBuilding Dynamic Router Table:\n");
+                console.info("\nBuilding Dynamic Router Table:\n");
 
-            buildDynamicTable(ACTIONS_ROOT, next);
+                buildDynamicTable(ACTIONS_ROOT, next);
+
+            } else {
+
+                next();
+            }
+        },
+
+        function (next: ErrorCallback): void {
+
+            generateStaticTable(ACTIONS_ROOT, SRT_PATH, next);
+        },
+
+        function (next: ErrorCallback): void {
+
+            generateDynamicTable(ACTIONS_ROOT, DRT_PATH, next);
+        }
+
+    ], function(err?: Error) {
+
+        console.log("");
+
+        if (err) {
+
+            console.error(`[!] Error [${err.name}]: ${err.message}.`);
 
         } else {
 
-            next();
+            console.info("Router table has been successfully built.");
         }
-    },
 
-    function (next: ErrorCallback): void {
+        buildTask.shift();
 
-        generateStaticTable(ACTIONS_ROOT, SRT_PATH, next);
-    },
+        if (buildTask.length > 0) {
 
-    function (next: ErrorCallback): void {
+            preTaskDate = buildTask[0];
+            startBuilder(preTaskDate);
+        }
 
-        generateDynamicTable(ACTIONS_ROOT, DRT_PATH, next);
+    });
+
+}
+
+watchMode && NodeFS.watch(ACTIONS_ROOT, function(event: string, file: string): void {
+
+    if (event === "change") {
+
+        return;
     }
 
-], function(err?: Error) {
+    console.info(`\nFile changes detected, a new built task started.\n`);
 
-    console.log("");
+    preTaskDate = new Date().getTime();
 
-    if (err) {
-
-        console.error(`[!] Error [${err.name}]: ${err.message}.`);
-
-    } else {
-
-        console.info("Router table has been successfully built.");
-    }
-
+    setTimeout(startBuilder, 500, preTaskDate);
 });
+
+startBuilder(preTaskDate);

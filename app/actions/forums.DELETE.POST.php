@@ -2,7 +2,7 @@
 namespace T\Action;
 
 /**
- * URI: /
+ * URI: /forums/
  */
 
 class HomePage extends IAction {

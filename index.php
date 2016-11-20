@@ -10,7 +10,7 @@ $__BOOTER = function() {
 
     unset($__BOOTER);
 
-    $router = require ('app/core/router.d/default.php');
+    $router = require ('app/core/router.d/apcu.php');
 
     $actionInfo = $router($_GET['__uri'], $_SERVER['REQUEST_METHOD']);
 
@@ -21,4 +21,15 @@ $__BOOTER = function() {
     $action->main($actionInfo['args']);
 };
 
-$__BOOTER();
+try {
+
+    $__BOOTER();
+
+} catch (core\IMessage $e) {
+
+    $e->handle();
+
+} catch (\Exception $e) {
+
+    \T\Service\Logger::writeLine('sql.error', $e->__toString());
+}

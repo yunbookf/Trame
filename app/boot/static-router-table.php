@@ -11,9 +11,6 @@ return [
         '/forums' => 'app/actions/forums.DELETE.POST.php',
         '/topics/replies' => 'app/actions/topics/.test/fff.php'
     ],
-    'PUT' => [
-
-    ],
     'DELETE' => [
         '/forums' => 'app/actions/forums.DELETE.POST.php'
     ]
