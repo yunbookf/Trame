@@ -8,7 +8,7 @@ namespace T\Action;
 class ForumList {
 
     public function main(array $args) {
-        echo 'hello';
+        echo 'forum list';
     }
 }
 

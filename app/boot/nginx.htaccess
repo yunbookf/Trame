@@ -22,13 +22,13 @@ location ~ ^/(bin|boot|dev|lib|var|view|tools|model) {
     deny all;
 }
 
-error_page  400             /public/common/400.html;
-error_page  401             /public/common/401.html;
-error_page  403             /public/common/403.html;
-error_page  404             /public/common/404.html;
-error_page  405             /public/common/405.html;
-error_page  500             /public/common/500.html;
-error_page  503             /public/common/503.html;
+error_page  400             /public/error/400.html;
+error_page  401             /public/error/401.html;
+error_page  403             /public/error/403.html;
+error_page  404             /public/error/404.html;
+error_page  405             /public/error/405.html;
+error_page  500             /public/error/500.html;
+error_page  503             /public/error/503.html;
 
 rewrite ^/public/(.+)$      /public/$1  last;
 

@@ -5,6 +5,9 @@ const async = require("async");
 require("langext");
 const SCRIPT_VERSION = "0.1.0-a1";
 const ACTIONS_ROOT = "app/actions";
+const SRT_PATH = "app/boot/static-router-table.php";
+const DRT_PATH = "app/boot/dynamic-router-table.php";
+const TAB = "    ";
 let actionMethodMap = {};
 let filesEntityTable = [];
 let actionFiles = [];
@@ -20,7 +23,7 @@ class RouterTable {
         this.simple[uri] = filePath;
     }
     registerDynamicAction(filePath, uri, callback) {
-        let drr = RouterTable.compileDynamicRule(uri);
+        let drr = RouterTable.compileDynamicRule(uri, filePath);
         if (!drr) {
             return callback({
                 "name": "SYNTAX-ERROR",
@@ -30,10 +33,11 @@ class RouterTable {
         this.dynamic.push(drr);
         return callback();
     }
-    static compileDynamicRule(rule) {
+    static compileDynamicRule(rule, filePath) {
         let drr = {
             "exp": null,
-            "variables": []
+            "variables": [],
+            "path": filePath
         };
         let varTypes = [];
         let i = 0;
@@ -107,7 +111,7 @@ for (let i = 2; i < process.argv.length; i++) {
         case "--disable-all-http-methods":
             for (let httpMethod of HTTP_METHODS) {
                 optHTTPMethodStatus[httpMethod] = false;
-                routerTables[httpMethod] = undefined;
+                delete routerTables[httpMethod];
             }
             console.info("    * All HTTP methods filter have been reset to be disabled.\n");
             break;
@@ -127,7 +131,7 @@ for (let i = 2; i < process.argv.length; i++) {
                 let httpMethod = argv.substr(15);
                 if (HTTP_METHODS.indexOf(httpMethod) >= 0) {
                     optHTTPMethodStatus[httpMethod] = false;
-                    routerTables[httpMethod] = undefined;
+                    delete routerTables[httpMethod];
                     console.info(`    * HTTP methods filter "${httpMethod}" has been disabled.\n`);
                 }
                 else {
@@ -343,6 +347,51 @@ function buildDynamicTable(root, callback) {
         });
     }, callback);
 }
+function generateStaticTable(root, tablePath, callback) {
+    let tables = [];
+    for (let method in routerTables) {
+        let table = routerTables[method];
+        let maps = [];
+        for (let uri in table.simple) {
+            let path = table.simple[uri];
+            maps.push(`${TAB.repeat(2)}'${uri}' => '${path}'`);
+        }
+        tables.push(`${TAB}'${method}' => [
+${maps.join(",\n")}
+${TAB}]`);
+    }
+    let srt = `<?php
+return [
+${tables.join(",\n")}
+];
+`;
+    NodeFS.writeFile(tablePath, srt, callback);
+}
+function generateDynamicTable(root, tablePath, callback) {
+    let tables = [];
+    for (let method in routerTables) {
+        let table = routerTables[method];
+        let maps = [];
+        for (let dr of table.dynamic) {
+            let exp = JSON.stringify(dr.exp.source);
+            exp = `/${exp.substr(1, exp.length - 2)}/`;
+            maps.push(`${TAB.repeat(2)}[
+${TAB.repeat(3)}'expr' => '${exp}',
+${TAB.repeat(3)}'path' => '${dr.path}',
+${TAB.repeat(3)}'vars' => ${JSON.stringify(dr.variables)}
+${TAB.repeat(2)}]`);
+        }
+        tables.push(`${TAB}'${method}' => [
+${maps.join(",\n")}
+${TAB}]`);
+    }
+    let drt = `<?php
+return [
+${tables.join(",\n")}
+];
+`;
+    NodeFS.writeFile(tablePath, drt, callback);
+}
 async.series([
     function (next) {
         scanRoutableFiles(ACTIONS_ROOT, next);
@@ -364,6 +413,12 @@ Building Simple Router Table:\n`);
             next();
         }
     },
+    function (next) {
+        generateStaticTable(ACTIONS_ROOT, SRT_PATH, next);
+    },
+    function (next) {
+        generateDynamicTable(ACTIONS_ROOT, DRT_PATH, next);
+    }
 ], function (err) {
     console.log("");
     if (err) {

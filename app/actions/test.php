@@ -8,7 +8,7 @@ namespace T\Action;
 class DevTest extends IAction {
 
     public function main(array $args): int {
-        echo 'hello';
+        echo 'testing';
         return 0;
     }
 }

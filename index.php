@@ -4,8 +4,21 @@ namespace T;
 
 require 'app/core/boot.php';
 
-$className = require ('app/actions/test.php');
+$__BOOTER = function() {
 
-$ac = new $className();
+    global $__BOOTER;
 
-$ac->main([]);
+    unset($__BOOTER);
+
+    $router = require ('app/core/router.d/default.php');
+
+    $actionInfo = $router($_GET['__uri'], $_SERVER['REQUEST_METHOD']);
+
+    $className = require ($actionInfo['path']);
+
+    $action = new $className();
+
+    $action->main($actionInfo['args']);
+};
+
+$__BOOTER();

@@ -8,7 +8,7 @@ namespace T\Action;
 class HomePage extends IAction {
 
     public function main(array $args): int {
-        echo 'hello';
+        header('HTTP/1.1 404 NOT FOUND');
         return 0;
     }
 }

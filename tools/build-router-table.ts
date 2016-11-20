@@ -8,6 +8,9 @@ import "langext";
 const SCRIPT_VERSION: string = "0.1.0-a1";
 
 const ACTIONS_ROOT: string = "app/actions";
+const SRT_PATH: string = "app/boot/static-router-table.php";
+const DRT_PATH: string = "app/boot/dynamic-router-table.php";
+const TAB: string = "    ";
 
 interface HTTPMethodTable<T> extends Dictionary<T> {
     "ALL"?: T;
@@ -31,6 +34,8 @@ interface DynamicRouterRule {
     "exp": RegExp;
 
     "variables": string[];
+
+    "path": string;
 }
 
 class RouterTable {
@@ -59,7 +64,7 @@ class RouterTable {
 
     public registerDynamicAction(filePath: string, uri: string, callback: ErrorCallback): void {
 
-        let drr: DynamicRouterRule = RouterTable.compileDynamicRule(uri);
+        let drr: DynamicRouterRule = RouterTable.compileDynamicRule(uri, filePath);
 
         if (!drr) {
 
@@ -74,11 +79,12 @@ class RouterTable {
         return callback();
     }
 
-    protected static compileDynamicRule(rule: string): DynamicRouterRule {
+    protected static compileDynamicRule(rule: string, filePath: string): DynamicRouterRule {
 
         let drr: DynamicRouterRule = {
             "exp": null,
-            "variables": []
+            "variables": [],
+            "path": filePath
         };
 
         let varTypes: string[] = [];
@@ -198,7 +204,7 @@ for (let i: number = 2; i < process.argv.length; i++) {
         for (let httpMethod of HTTP_METHODS) {
 
             optHTTPMethodStatus[httpMethod] = false;
-            routerTables[httpMethod] = undefined;
+            delete routerTables[httpMethod];
         }
 
         console.info("    * All HTTP methods filter have been reset to be disabled.\n");
@@ -230,7 +236,7 @@ for (let i: number = 2; i < process.argv.length; i++) {
             if (HTTP_METHODS.indexOf(httpMethod) >= 0) {
 
                 optHTTPMethodStatus[httpMethod] = false;
-                routerTables[httpMethod] = undefined;
+                delete routerTables[httpMethod];
 
                 console.info(`    * HTTP methods filter "${httpMethod}" has been disabled.\n`);
 
@@ -574,6 +580,80 @@ function buildDynamicTable(root: string, callback: ErrorCallback): void {
     }, callback);
 }
 
+function generateStaticTable(root: string, tablePath: string, callback: ErrorCallback): void {
+
+    let tables: string[] = [];
+
+    for (let method in routerTables) {
+
+        let table: RouterTable = routerTables[method];
+
+        let maps: string[] = [];
+
+        for (let uri in table.simple) {
+
+            let path: string = table.simple[uri];
+
+            maps.push(`${TAB.repeat(2)}'${uri}' => '${path}'`);
+
+        }
+
+        tables.push(`${TAB}'${method}' => [
+${maps.join(",\n")}
+${TAB}]`);
+
+    }
+
+    let srt: string = `<?php
+return [
+${tables.join(",\n")}
+];
+`;
+
+    NodeFS.writeFile(tablePath, srt, callback);
+
+}
+
+function generateDynamicTable(root: string, tablePath: string, callback: ErrorCallback): void {
+
+    let tables: string[] = [];
+
+    for (let method in routerTables) {
+
+        let table: RouterTable = routerTables[method];
+
+        let maps: string[] = [];
+
+        for (let dr of table.dynamic) {
+
+            let exp: string = JSON.stringify(dr.exp.source);
+
+            exp = `/${exp.substr(1, exp.length - 2)}/`;
+
+            maps.push(`${TAB.repeat(2)}[
+${TAB.repeat(3)}'expr' => '${exp}',
+${TAB.repeat(3)}'path' => '${dr.path}',
+${TAB.repeat(3)}'vars' => ${JSON.stringify(dr.variables)}
+${TAB.repeat(2)}]`);
+
+        }
+
+        tables.push(`${TAB}'${method}' => [
+${maps.join(",\n")}
+${TAB}]`);
+
+    }
+
+    let drt: string = `<?php
+return [
+${tables.join(",\n")}
+];
+`;
+
+    NodeFS.writeFile(tablePath, drt, callback);
+
+}
+
 async.series([
 
     function (next: ErrorCallback): void {
@@ -605,6 +685,16 @@ Building Simple Router Table:\n`);
             next();
         }
     },
+
+    function (next: ErrorCallback): void {
+
+        generateStaticTable(ACTIONS_ROOT, SRT_PATH, next);
+    },
+
+    function (next: ErrorCallback): void {
+
+        generateDynamicTable(ACTIONS_ROOT, DRT_PATH, next);
+    }
 
 ], function(err?: Error) {
 

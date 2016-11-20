@@ -11,6 +11,7 @@ define('T_STATIC_ROOT', T_ROOT . 'public/');
 
 require T_CONFIG_ROOT . 'links.php';
 require T_CONFIG_ROOT . 'version.php';
+require T_CONFIG_ROOT . 'router.php';
 require T_CORE_ROOT . 'action.php';
 require T_CORE_ROOT . 'msg.php';
 
