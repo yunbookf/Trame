@@ -9,7 +9,5 @@ class RouteFailure extends IMessage {
 
     public function handle() {
 
-        header('location: ' . $this->getMessage());
     }
-
 }

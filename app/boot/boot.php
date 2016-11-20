@@ -24,7 +24,6 @@ $__BOOTER = function() {
             'path' => 'app/actions/.error/' . $e->getCode() . '.php',
             'args' => []
         ];
-
     }
 
     $className = require ($actionInfo['path']);
@@ -42,7 +41,11 @@ try {
 
     $e->handle();
 
+} catch (\PDOException $e) {
+
+    \T\Service\Logger::write('sql.error', $e->__toString());
+
 } catch (\Exception $e) {
 
-    \T\Service\Logger::writeLine('sql.error', $e->__toString());
+    \T\Service\Logger::write('bugs', $e->__toString());
 }
