@@ -11,4 +11,4 @@
 /.project
 /.buildpath
 /tools/node_modules/
-
+.idea
