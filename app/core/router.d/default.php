@@ -25,6 +25,11 @@ return function (string $uri, string $method): array {
             $method
         ] as $m) {
 
+            if (empty($drt[$m])) {
+
+                continue;
+            }
+
             foreach ($drt[$m] as $rule) {
 
                 if (preg_match($rule['expr'], $uri, $matches)) {
