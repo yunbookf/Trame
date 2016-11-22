@@ -52,3 +52,4 @@ LOG;
         file_put_contents($fn, $log_info, FILE_APPEND);
     }
 }
+
