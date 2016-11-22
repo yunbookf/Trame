@@ -11,6 +11,7 @@ class DevTest extends IAction {
 
     public function main(array $args): int {
 
+        var_dump($this->request->acceptedLanguages);
         return 0;
     }
 }
