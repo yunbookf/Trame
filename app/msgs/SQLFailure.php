@@ -10,8 +10,6 @@ class SQLFailure extends IMessage {
 
         header('HTTP/1.1 500 INTERNAL ERROR'); // 显示 HTTP 500 错误
 
-        \T\Service\Logger::write('sql', $this->getMessage());
-
+        \T\Service\Logger::write('sql.failure', $this->getMessage());
     }
-
 }

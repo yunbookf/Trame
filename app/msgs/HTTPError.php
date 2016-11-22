@@ -11,5 +11,4 @@ class HTTPError extends IMessage {
 
         header('HTTP/1.1 ' . $this->getCode());
     }
-
 }

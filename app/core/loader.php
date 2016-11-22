@@ -10,6 +10,7 @@ define('T_DATE_ROOT', T_ROOT . 'data/');
 define('T_STATIC_ROOT', T_ROOT . 'public/');
 define('T_MSG_ROOT', T_APP_ROOT . 'msgs/');
 define('T_SERVICE_ROOT', T_APP_ROOT . 'service/');
+define('T_VIEW_ROOT', T_APP_ROOT . 'views/');
 
 require T_CONFIG_ROOT . 'links.php';
 require T_CONFIG_ROOT . 'version.php';

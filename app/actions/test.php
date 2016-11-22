@@ -2,7 +2,7 @@
 
 namespace T\Action;
 
-use \T\Service as service;
+use \T\Service as service, \T\Msg as msg;
 
 /**
  * URI: /*
@@ -11,10 +11,7 @@ class DevTest extends IAction {
 
     public function main(array $args): int {
 
-        echo 'testing';
-
         return 0;
-
     }
 }
 
