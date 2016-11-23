@@ -11,7 +11,9 @@ use \T\HTTP as http, \T\Service\Logger;
  * @property \T\HTTP\Response $response
  *     The response controlling object
  * @property \T\TDBI\IDBConnection $db
- *     The default database object
+ *     The default database connection object
+ * @property \T\KVCache\IConnection $cache
+ *     The default cache connection object
  */
 abstract class IAction {
 
@@ -27,6 +29,10 @@ abstract class IAction {
         case 'response':
 
             return $this->response = new http\Response();
+
+        case 'cache':
+
+            return $this->cache = \T\Service\KVCache::get(\T\Links\CACHE_DEFAULT);
 
         case 'db':
 
