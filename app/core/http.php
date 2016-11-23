@@ -28,17 +28,17 @@ const GATEWAY_TIMEOUT = 504;
 /**
  *
  * @property string $ip
- *     Remote address of the remote HTTP client.
+ *     客户端 IP（本属性在首次引用时才分配）
  * @property string $userAgent
- *     The name and version of the remote HTTP client.
+ *     客户端软件信息（本属性在首次引用时才分配）
  * @property string $host
- *     The hostname of this server.
+ *     服务器的 hostname（本属性在首次引用时才分配）
  * @property int $contentLength
- *     The bytes length of request content.
+ *     请求携带的 HTTP Content 的数据长度（本属性在首次引用时才分配）
  * @property string $contentType
- *     The MIME type of request content.
+ *     请求携带的 HTTP Content MIME类型（本属性在首次引用时才分配）
  * @property string[] $acceptedLanguages
- *     The acceptable languages of HTTP client.
+ *     客户端可以接受的语言信息（本属性在首次引用时才分配）
  */
 class Request {
 
@@ -113,10 +113,14 @@ class Request {
     }
 
     /**
-     * Return the raw content of HTTP request.
+     * 获取 POST/PUT/PATCH/DELETE 等请求的携带的 HTTP Content 裸数据。
+     * 
      * @param bool $emitError
+     *     可选参数，默认为 true。如果设为 false，则获取数据失败时不会抛出异常而是返回 null。
+     * 
      * @throws \T\Msg\HTTPError
      * @return string
+     *     返回 HTTP Content 。如果将参数 $emitError 设为 false，则失败时返回 null。
      */
     public function getRawContent(bool $emitError = true): string {
 
@@ -133,10 +137,14 @@ class Request {
     }
 
     /**
-     *
+     * 获取 POST/PUT/PATCH/DELETE 等请求的携带的 JSON 数据，并返回解码后的对象。
+     * 
      * @param bool $emitError
+     *     可选参数，默认为 true。如果设为 false，则获取数据失败时不会抛出异常而是返回 null。
+     * 
      * @throws \T\Msg\HTTPError
-     * @return mixed
+     * @return any
+     *     返回解码后的 JSON 对象。如果将参数 $emitError 设为 false，则失败时返回 null。
      */
     public function getJSONContent(bool $emitError = true) {
 
@@ -152,6 +160,10 @@ class Request {
 
     }
 
+    /**
+     * 判断 POST/PUT/PATCH/DELETE 等请求的携带的 HTTP Content 是否为 JSON 格式
+     * @return bool
+     */
     public function isJSONContent(): bool {
 
         if (!$this->contentType) {
@@ -173,10 +185,11 @@ class Request {
     }
 
     /**
-     * !!!NOTICE: This method may be cheated by sending
-     * HTTP-X-FORWARDED-FOR header.
-     * For this, DO NEVER USE IT FOR SECURITY JUDGING!!!
-     *
+     * （跨越代理获取）获取客户端的真实 IP
+     * 
+     * 警告：该方法获取的 IP 可以通过发送 HTTP-X-FORWARDED-FOR 头伪造，
+     * 因此严禁在安全检测中使用该方法获取IP！
+     * 
      * @return string
      */
     public function getIP(): string {

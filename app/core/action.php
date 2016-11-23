@@ -7,13 +7,13 @@ use \T\HTTP as http, \T\Service\Logger;
 
 /**
  * @property \T\HTTP\Request $request
- *     The request controlling object
+ *     HTTP 请求的描述对象（首次调用时分配）
  * @property \T\HTTP\Response $response
- *     The response controlling object
+ *     HTTP 请求的响应对象（首次调用时分配）
  * @property \T\TDBI\IDBConnection $db
- *     The default database connection object
+ *     默认的数据库链接对象（首次调用时分配）
  * @property \T\KVCache\IConnection $cache
- *     The default cache connection object
+ *     默认的缓存链接对象（首次调用时分配）
  */
 abstract class IAction {
 
@@ -49,6 +49,8 @@ abstract class IAction {
         switch ($name) {
         case 'request':
         case 'response':
+        case 'db':
+        case 'cache':
 
             return true;
 
@@ -79,6 +81,11 @@ abstract class IAction {
 
     }
 
+    /**
+     * Action 的处理器入口方法。
+     * @param array $args
+     * @return int
+     */
     abstract public function main(array $args): int;
 
 }

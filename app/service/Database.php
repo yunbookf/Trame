@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * 本文件提供关系型数据库的统一管理器和统一接口 Database。
+ *
+ * @author Angus Fenying <i.am.x.fenying@gmail>
+ */
 declare (strict_types = 1);
 
 namespace T\Service;
