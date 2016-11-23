@@ -160,8 +160,16 @@ class apcu extends IConnection {
     public function keys(string $keyRules = null): array {
 
         $ret = [];
+        if (!$keyRules || $keyRules === '*') {
 
-        foreach (new \APCUIterator(self::compileRule($keyRules)) as $key => $v) {
+            $iter = new \APCUIterator();
+
+        } else {
+
+            $iter = new \APCUIterator(self::compileRule($keyRules));
+        }
+
+        foreach ($iter as $key => $v) {
 
             $ret[] = $key;
         }
@@ -171,7 +179,7 @@ class apcu extends IConnection {
 
     public function count(string $keyRules = null): int {
 
-        if (!$keyRules) {
+        if (!$keyRules || $keyRules === '*') {
 
             return apcu_cache_info(true)['num_entries'];
         }

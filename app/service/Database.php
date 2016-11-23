@@ -9,22 +9,20 @@ require T_CONFIG_ROOT . 'database.php';
 class Database extends IService {
 
     /**
-     * The pool of connections
+     * 链接池
      *
      * @var array
      */
     protected static $__connPool = [];
 
     /**
-     * This method provides the way to get a connection by external
-     * configuration of database.
+     * 这个方法通过配置连接数据库服务器，并返回一个数据库链接。
      *
      * @param array $config
-     *            the configuration of connection
+     *     数据库链接配置
      * @param string $id
-     *            the id of connection. if NULL passed,
-     *            used an auto_incremental numeric index
-     *            as unnamed id.
+     *     对应的链接命名ID
+     *
      * @return \T\TDBI\IDBConnection
      * @throws \T\Msg\ServiceFailure
      */
@@ -61,13 +59,12 @@ class Database extends IService {
     }
 
     /**
-     * This method tries picking a connection by id.
-     * If connection of this id is not connected but existing in
-     * /etc/TDBI.php, it will auto connect and return the connection
-     * object.
+     * 本方法尝试按命名 ID在 /etc/database.php 中寻找对应的数据库配置，
+     * 并根据配置连接数据库，返回链接对象。
      *
      * @param string $id
-     *            the id of connection.
+     *     链接的命名 ID
+     *
      * @return \T\TDBI\IDBConnection
      * @throws \T\Msg\ServiceFailure
      */
@@ -90,11 +87,11 @@ class Database extends IService {
     }
 
     /**
-     * This method returns whether a connection is built.
+     * 这个方法用于检测一个命名ID对应的链接是否已经存在。
      *
      * @param string $id
-     *            the id of connection.
-     * @return bool returns true if yes, or false.
+     *     链接的命名ID
+     * @return bool
      */
     public static function check(string $id): bool {
 
@@ -103,10 +100,11 @@ class Database extends IService {
     }
 
     /**
-     * This method will try killing a connection in the pool.
+     * 本方法将从链接池释放一个数据库链接。
+     * 注意：这并不意味着数据库链接将被断开，因为可能在其它位置也有引用该数据库链接对象。
      *
      * @param string $id
-     *            the id of connection.
+     *     链接的命名ID
      */
     public static function shutdown(string $id) {
 
@@ -125,7 +123,7 @@ namespace T\TDBI;
 abstract class IDBConnection extends \PDO {
 
     /**
-     * How many rows were affected in last query.
+     * 上次 exec 方法影响的行数
      * @var int
      */
     public $affectedRows = 0;
@@ -148,8 +146,10 @@ abstract class IDBConnection extends \PDO {
     }
 
     /**
-     * Execute a Modification SQL.
-     * All failure will be recorded in file /logs/sql.failure.log
+     * 执行一条 SQL 更新语句，该方法不适用于 SELECT 等具有返回结果集的查询。
+     * 
+     * 本方法执行成功时，返回SQL语句影响的行数。执行失败则抛出异常，如果
+     * 该异常未被捕获，则会被记录到 /logs/sql.failure.log。
      * 
      * @throws \T\Msg\SQLFailure
      * @return int
@@ -162,6 +162,7 @@ abstract class IDBConnection extends \PDO {
 
             $err = $this->errorInfo();
             $callee = getCallerLine();
+            $this->affectedRows = 0;
             throw new \T\Msg\SQLFailure(<<<SQL
 SQL: {$sql}
 Error Code: {$err[1]}
@@ -175,8 +176,10 @@ SQL
     }
 
     /**
-     * Execute a Query SQL.
-     * All failure will be recorded in file /logs/sql.failure.log
+     * 执行一条 SQL 查询语句，该方法仅适用于 SELECT 等具有返回结果集的查询。
+     * 
+     * 本方法执行成功时，返回结果集操作对象。执行失败则抛出异常，如果该异常未被
+     * 捕获，则会被记录到 /logs/sql.failure.log。
      * 
      * @throws \T\Msg\SQLFailure
      * @return \PDOStatement

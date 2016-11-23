@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * 本文件提供 Key-Value 缓存的统一管理器和统一接口 KVCache。
+ * 
+ * @author Angus Fenying <i.am.x.fenying@gmail>
+ */
 declare (strict_types = 1);
 
 namespace T\Service;
@@ -9,22 +13,20 @@ require T_CONFIG_ROOT . 'cache.php';
 class KVCache extends IService {
 
     /**
-     * The pool of connections
+     * 缓存链接池
      *
      * @var array
      */
     protected static $__connPool = [];
 
     /**
-     * This method provides the way to get a connection by external
-     * configuration of cache.
+     * 这个方法通过配置连接缓存，并返回一个缓存链接。
      *
      * @param array $config
-     *            the configuration of connection
+     *     缓存链接配置
      * @param string $id
-     *            the id of connection. if NULL passed,
-     *            used an auto_incremental numeric index
-     *            as unnamed id.
+     *     对应的链接命名ID
+     *
      * @return \T\KVCache\IConnection
      * @throws \T\Msg\ServiceFailure
      */
@@ -61,13 +63,12 @@ class KVCache extends IService {
     }
 
     /**
-     * This method tries picking a connection by id.
-     * If connection of this id is not connected but existing in
-     * /etc/KVCache.php, it will auto connect and return the connection
-     * object.
+     * 本方法尝试按命名 ID在 /etc/cache.php 中寻找对应的缓存配置，
+     * 并根据配置连接缓存，返回链接对象。
      *
      * @param string $id
-     *            the id of connection.
+     *     链接的命名 ID
+     *
      * @return \T\KVCache\IConnection
      * @throws \T\Msg\ServiceFailure
      */
@@ -90,11 +91,11 @@ class KVCache extends IService {
     }
 
     /**
-     * This method returns whether a connection is built.
+     * 这个方法用于检测一个命名ID对应的链接是否已经存在。
      *
      * @param string $id
-     *            the id of connection.
-     * @return bool returns true if yes, or false.
+     *     链接的命名ID
+     * @return bool
      */
     public static function check(string $id): bool {
 
@@ -103,10 +104,11 @@ class KVCache extends IService {
     }
 
     /**
-     * This method will try killing a connection in the pool.
+     * 本方法将从链接池释放一个缓存链接。
+     * 注意：这并不意味着缓存链接将被断开，因为可能在其它位置也有引用该缓存链接对象。
      *
      * @param string $id
-     *            the id of connection.
+     *     链接的命名ID
      */
     public static function shutdown(string $id) {
 
@@ -127,24 +129,38 @@ abstract class IConnection {
     abstract public function __construct(array $config);
 
     /**
-     * Read a key from cache.
+     * 根据 key 从缓存中读取一个值。
      * 
      * @param string $key
      * @return any
-     *     Return null if failed.
+     *     不存在时返回 null
      */
     abstract public function get(string $key);
 
     /**
-     * Read all values whose keys matched by a Rule from cache.
+     * 根据 key 的泛匹配式搜索并返回对应的键值。
      * 
-     * @param string $keyRules   Rule of key
+     * Tips: $keyRules => '*' 等价于 $keyRules => null，都是匹配所有 key。
+     * 
+     * @param string $keyRules
+     *     key 的泛匹配式
+     * 
      * @return array
+     *     返回检索到的 key->value 式数组，没找到任何符合的 key 时返回空数组。
      */
     abstract public function getEx(string $keyRules): array;
 
     /**
-     * Delete a key from cache.
+     * 根据 key 数组从缓存中一次读取多对键值。
+     * 
+     * @param array<string> $keys
+     * @return array
+     *     返回检索到的 key->value 式数组，未找到的 key 对应值为 null。
+     */
+    abstract public function multiGet(array $keys): array;
+
+    /**
+     * 根据 key 从缓存中删除一个键值。
      * 
      * @param string $key
      * @return bool
@@ -152,27 +168,33 @@ abstract class IConnection {
     abstract public function del(string $key): bool;
 
     /**
-     * Delete all keys matched by a Rule from cache.
+     * 根据 key 的泛匹配式搜索并删除对应的键值。
      * 
-     * @param string $keyRules   Rule of key
+     * Tips: $keyRules => '*' 等价于 $keyRules => null，都是匹配所有 key。
+     * 
+     * @param string $keyRules
+     *     key 的泛匹配式
+     * 
      * @return int
-     *     Return the number of keys deleted.
+     *     返回删除的键值数量。
      */
     abstract public function delEx(string $keyRules): int;
 
     /**
-     * Delete multi values from cache. 
+     * 根据 key 数组一次删除多对键值。
      *
      * @param array $keys
+     *     key 数组
      * @param array &$results
-     *     optional, to receive failed keys.
+     *     可选参数，用于接收删除失败的key集合
      *
-     * @return int Returns the number of succeed operations.
+     * @return int
+     *     本方法返回成功删除的键值数量。
      */
     abstract public function multiDel(array $keys, array &$results = null): int;
 
     /**
-     * Check if a key exists in the cache.
+     * 检查一个键值是否存在
      * 
      * @param string $key
      * @return bool
@@ -180,90 +202,92 @@ abstract class IConnection {
     abstract public function exist(string $key): bool;
 
     /**
-     * Read multi keys from cache.
+     * 向缓存中写入一对键值，如果指定的 key 已经存在，则对应的值会被覆盖掉。
      * 
-     * @param array<string> $keys
-     * @return array
-     */
-    abstract public function multiGet(array $keys): array;
-
-    /**
-     * Write a value into cache. It will overwrite the old value if the key
-     * already exists.
-     * 
-     * @param string $keys
+     * @param string $key
      * @param any $value
      * @param int $expires
+     *     有效期，单位为秒。0 为默认值，表示永不过期。
+     *
+     * @return bool
+     *     成功返回 true
      */
-    abstract public function set(string $keys, $value, int $expires = 0): bool;
+    abstract public function set(string $key, $value, int $expires = 0): bool;
 
     /**
-     * Write multi values into cache. It will overwrite the old value if the key
-     * already exists.
+     * 向缓存一次写入多对键值。如果指定的 key 已经存在，则对应的值会被覆盖掉。
      * 
      * @param array $kvParis
+     *     键值对数组
      * @param int $expires
+     *     有效期，单位为秒。0 为默认值，表示永不过期。
+     * @param array &$results
+     *     可选参数，用于接收写入失败的key集合
      * 
-     * @return string[] Returns the keys list failed.
+     * @return int
+     *     返回成功写入的键值对数量。
      */
     abstract public function multiSet(array $kvParis, int $expires = 0, array &$results = null): int;
 
     /**
-     * Add multi values into cache. It will fail if a key already exists.
+     * 向缓存一次写入多对键值。如果指定的 key 已经存在，则写入失败。
      * 
      * @param array $kvParis
+     *     键值对数组
      * @param int $expires
+     *     有效期，单位为秒。0 为默认值，表示永不过期。
      * @param array &$results
-     *     optional, to receive failed keys.
+     *     可选参数，用于接收写入失败的key集合
      * 
-     * @return int Returns the number of succeed operations.
+     * @return int
+     *     返回成功写入的键值对数量。
      */
     abstract public function multiAdd(array $kvParis, int $expires = 0, array &$results = null): int;
 
     /**
-     * Add a value into cache。 It will failed if the key already exists.
+     * 向缓存中写入一对键值，如果指定的 key 已经存在，则写入失败。
      * 
-     * @param string $keys
+     * @param string $key
      * @param any $value
      * @param int $expires
+     *     有效期，单位为秒。0 为默认值，表示永不过期。
+     *
+     * @return bool
+     *     成功返回 true
      */
     abstract public function add(string $keys, $value, int $expires = 0): bool;
 
     /**
-     * Count how many keys matched rules.
+     * 统计缓存中有多少键值对，如果给第一个参数传递一个泛匹配式，则搜索并返回匹配的键值对数量。
      * 
-     * @param string $keyRules the rule for searching keys.
+     * Tips: $keyRules => '*' 等价于 $keyRules => null，都是匹配所有 key。
+     * 
+     * @param string $keyRules
+     *     可选参数，key的泛匹配式
+     *
      * @return int
+     * 
      */
     abstract public function count(string $keyRules = null): int;
 
     /**
-     * Get list of keys matched rules.
+     * 获取缓存中的key数组，如果给第一个参数传递一个泛匹配式，则搜索并匹配对应的 key。
+     * 
+     * Tips: $keyRules => '*' 等价于 $keyRules => null，都是匹配所有 key。
      * 
      * @param string $keyRules
-     *     the rule for searching keys.
+     *     可选参数，key的泛匹配式
      *
      * @return string[]
      */
     abstract public function keys(string $keyRules = null): array;
 
     /**
-     * Removes all data in cache.
+     * 清空缓存。
      * 
      * @return bool
      */
     abstract public function flush(): bool;
 
-    /**
-     * Replace value in cache with a new value, if the current value matches
-     * the specific value.
-     * 
-     * @param string $keys
-     * @param any $newValue
-     * @param any $oldValue
-     * 
-     * @return bool
-     */
-    // abstract public function cas(string $keys, $newValue, $oldValue): bool;
 
 }
