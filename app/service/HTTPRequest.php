@@ -25,10 +25,11 @@ class HTTPRequest extends IService {
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $output = curl_exec($ch);
         curl_close($ch);
-        if ($output)
+        if ($output) {
             return $output;
-        else
+        } else {
             return false;
+        }
 
     }
 
@@ -60,10 +61,11 @@ class HTTPRequest extends IService {
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $output = curl_exec($ch);
         curl_close($ch);
-        if ($output)
+        if ($output) {
             return $output;
-        else
+        } else {
             return false;
+        }
 
     }
 
