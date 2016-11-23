@@ -3,6 +3,7 @@
 /data/*
 /etc/*.ini
 /etc/*.json
+/etc/database.php
 !/temp/README.md
 !/logs/README.md
 !/data/README.md

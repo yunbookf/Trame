@@ -10,8 +10,12 @@ use \T\HTTP as http, \T\Service\Logger;
  *     The request controlling object
  * @property \T\HTTP\Response $response
  *     The response controlling object
+ * @property \T\TDBI\IDBConnection $db
+ *     The default database object
  */
 abstract class IAction {
+
+    public function __construct() { }
 
     public function __get(string $name) {
 
@@ -23,6 +27,10 @@ abstract class IAction {
         case 'response':
 
             return $this->response = new http\Response();
+
+        case 'db':
+
+            return $this->db = \T\Service\Database::get(\T\Links\DATABASE_DEFAULT);
 
         default:
 

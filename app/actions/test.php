@@ -11,11 +11,9 @@ class DevTest extends IAction {
 
     public function main(array $args): int {
 
-        echo $this->ggg;
+        var_dump($this->db->exec('UPDATE `users` SET `seedbonus`=1234567 WHERE id=8017'));
         return 0;
-
     }
-
 }
 
 return DevTest::class;

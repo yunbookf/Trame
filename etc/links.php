@@ -1,4 +1,4 @@
 <?php
-namespace T\links;
+namespace T\Links;
 
-const DEFAULT_MYSQL = '';
+const DATABASE_DEFAULT = 'mysql';

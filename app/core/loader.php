@@ -8,8 +8,10 @@ define('T_LOGS_ROOT', T_ROOT . 'logs/');
 define('T_DATE_ROOT', T_ROOT . 'data/');
 define('T_STATIC_ROOT', T_ROOT . 'public/');
 define('T_MSG_ROOT', T_APP_ROOT . 'msgs/');
+define('T_MODEL_ROOT', T_APP_ROOT . 'models/');
 define('T_SERVICE_ROOT', T_APP_ROOT . 'service/');
 define('T_VIEW_ROOT', T_APP_ROOT . 'views/');
+define('T_DEPS_ROOT', T_APP_ROOT . 'deps/');
 
 require T_CONFIG_ROOT . 'links.php';
 require T_CONFIG_ROOT . 'version.php';
@@ -28,10 +30,13 @@ spl_autoload_register(function (string $class) {
     if (substr($class, 0, 6) === 'T\\Msg\\') {
 
         require T_MSG_ROOT . substr($class, 6) . '.php';
-    }
 
-    if (substr($class, 0, 10) === 'T\\Service\\') {
+    } elseif (substr($class, 0, 10) === 'T\\Service\\') {
 
         require T_SERVICE_ROOT . substr($class, 10) . '.php';
+
+    } elseif (substr($class, 0, 8) === 'T\\Model\\') {
+
+        require T_MODEL_ROOT . substr($class, 8) . '.php';
     }
 });

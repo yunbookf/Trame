@@ -23,7 +23,7 @@ class Logger extends IService {
      * @param string $text
      *            Log info.
      */
-    public static function write(string $type, string $level, string $text) {
+    public static function write(string $type, string $level, string $text, $from = null) {
 
         $fn = T_LOGS_ROOT . $type . '.log';
 
@@ -35,7 +35,7 @@ class Logger extends IService {
         $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 
         $date = DATENOW;
-        $pos = getCallerLine();
+        $pos = $from ?? getCallerLine();
         $log_info = <<<LOG
 ======================================
 Type:       {$level}
