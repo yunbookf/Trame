@@ -30,22 +30,7 @@ $__BOOTER = function() {
 
     $action = new $className();
 
-    $action->main($actionInfo['args']);
+    $action($actionInfo['args']);
 };
 
-try {
-
-    $__BOOTER();
-
-} catch (core\IMessage $e) {
-
-    $e->handle();
-
-} catch (\PDOException $e) {
-
-    \T\Service\Logger::write('sql.error', $e->__toString());
-
-} catch (\Exception $e) {
-
-    \T\Service\Logger::write('bugs', $e->__toString());
-}
+$__BOOTER();

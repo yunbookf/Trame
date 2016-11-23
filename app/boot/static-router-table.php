@@ -2,7 +2,8 @@
 return [
     'ALL' => [
         '/' => 'app/actions/index.php',
-        '/test' => 'app/actions/test.php'
+        '/test' => 'app/actions/test.php',
+        '/tpltest' => 'app/actions/tpltest.php'
     ],
     'GET' => [
         '/forums' => 'app/actions/forums/index.GET.php'

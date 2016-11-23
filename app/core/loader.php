@@ -1,5 +1,4 @@
 <?php
-
 define('T_ROOT', './');
 define('T_APP_ROOT', T_ROOT . 'app/');
 define('T_CORE_ROOT', T_APP_ROOT . 'core/');
@@ -24,7 +23,7 @@ require T_CORE_ROOT . 'service.php';
 define('TIMENOW', $_SERVER['REQUEST_TIME']);
 define('DATENOW', date('Y-m-d H:i:s', TIMENOW));
 
-spl_autoload_register(function(string $class) {
+spl_autoload_register(function (string $class) {
 
     if (substr($class, 0, 6) === 'T\\Msg\\') {
 

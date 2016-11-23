@@ -10,5 +10,5 @@ abstract class IMessage extends \Exception {
         parent::__construct($message, $errorCode);
     }
 
-    abstract public function handle();
+    abstract public function handle(\T\HTTP\Request $req, \T\HTTP\Response $resp);
 }
