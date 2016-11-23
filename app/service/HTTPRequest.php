@@ -7,7 +7,7 @@ namespace T\Service;
  * 用于处理一些网络请求
  *
  * @author Han Guo Shuai
- *        
+ *
  */
 class HTTPRequest extends IService {
 
@@ -30,7 +30,7 @@ class HTTPRequest extends IService {
             return $output;
         else
             return false;
-    
+
     }
 
     /**
@@ -38,10 +38,10 @@ class HTTPRequest extends IService {
      *
      * @param string $url
      *            要获取的 URL
-     *            
+     *
      * @param array $data
      *            要提交的数据对，若要上传文件，内容前加@
-     *            
+     *
      * @return boolean | string
      */
     public static function post(string $url, array $data = []) {
@@ -65,7 +65,7 @@ class HTTPRequest extends IService {
             return $output;
         else
             return false;
-    
+
     }
 
 }
