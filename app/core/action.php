@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace T\Action;
 
-use \T\HTTP as http, \T\Service\Logger;
+use \T\HTTP as http, \T\Service as service;
 
 /**
  * @property \T\HTTP\Request $request
@@ -12,52 +12,44 @@ use \T\HTTP as http, \T\Service\Logger;
  *     HTTP 请求的响应对象（首次调用时分配）
  * @property \T\TDBI\IDBConnection $db
  *     默认的数据库链接对象（首次调用时分配）
+ * @property \T\TDBI\IDBConnection $dbWriter
+ *     默认的写专用数据库链接对象（首次调用时分配）
+ * @property \T\TDBI\IDBConnection $dbReader
+ *     默认的读专用数据库链接对象（首次调用时分配）
  * @property \T\KVCache\IConnection $cache
  *     默认的缓存链接对象（首次调用时分配）
  */
 abstract class IAction {
 
-    public function __construct() { }
+    use \T\Core\TDelayInitializer;
 
-    public function __get(string $name) {
+    /**
+     * You should call this constructor to get default DI.
+     * 
+     * Or ignore this if you wanna customize the default DI.
+     */
+    public function __construct() { 
 
-        switch ($name) {
-        case 'request':
-
-            return $this->request = new http\Request();
-
-        case 'response':
-
-            return $this->response = new http\Response();
-
-        case 'cache':
-
-            return $this->cache = \T\Service\KVCache::get(\T\Links\CACHE_DEFAULT);
-
-        case 'db':
-
-            return $this->db = \T\Service\Database::get(\T\Links\DATABASE_DEFAULT);
-
-        default:
-
-            throw new \T\Msg\InvalidInvoke('Non-existent property "' . $name . '".');
-        }
-    }
-
-    public function __isset(string $name) {
-
-        switch ($name) {
-        case 'request':
-        case 'response':
-        case 'db':
-        case 'cache':
-
-            return true;
-
-        default:
-
-            return false;
-        }
+        $this->di = [
+            'request' => function() {
+                return new http\Request();
+            },
+            'response' => function() {
+                return new http\Response();
+            },
+            'cache' => function() {
+                return \T\Service\KVCache::get(\T\Links\CACHE_DEFAULT);
+            },
+            'db' => function() {
+                return \T\Service\Database::get(\T\Links\DATABASE_DEFAULT);
+            },
+            'dbReader' => function() {
+                return \T\Service\Database::get(\T\Links\DATABASE_DEFAULT_READ);
+            },
+            'dbWriter' => function() {
+                return \T\Service\Database::get(\T\Links\DATABASE_DEFAULT_WRITE);
+            }
+        ];
     }
 
     public function __invoke(array $args) {
@@ -66,17 +58,17 @@ abstract class IAction {
 
             $this->main($args);
 
-        } catch (\T\Core\IMessage $e) {
+        } catch (\T\Msg\IMessage $e) {
 
             $e->handle($this->request, $this->response);
 
         } catch (\PDOException $e) {
 
-            Logger::write('sql.error', Logger::FETAL_ERROR, $e->__toString());
+            service\Logger::write('sql.error', service\Logger::FETAL_ERROR, $e->__toString());
 
         } catch (\Exception $e) {
 
-            Logger::write('bugs', Logger::FETAL_ERROR, $e->__toString());
+            service\Logger::write('bugs', service\Logger::FETAL_ERROR, $e->__toString());
         }
 
     }

@@ -42,74 +42,64 @@ const GATEWAY_TIMEOUT = 504;
  */
 class Request {
 
-    public function __get(string $name) {
+    use \T\Core\TDelayInitializer;
 
-        switch ($name) {
-        case 'host':
+    public function __construct() {
 
-            return $this->host = $_SERVER['HTTP_HOST'] ?? null;
+        $this->di = [
+            'host' => function() {
 
-        case 'contentLength':
+                return $_SERVER['HTTP_HOST'] ?? null;
+            },
+            'contentLength' => function() {
 
-            return $this->contentLength = $_SERVER['CONTENT_LENGTH'] ?? null;
+                return $_SERVER['CONTENT_LENGTH'] ?? null;
+            },
+            'contentType' => function() {
 
-        case 'contentType':
+                return $_SERVER['CONTENT_TYPE'] ?? null;
+            },
+            'userAgent' => function() {
 
-            return $this->contentType = $_SERVER['CONTENT_TYPE'] ?? null;
+                return $_SERVER['HTTP_USER_AGENT'] ?? null;
+            },
+            'ip' => function() {
 
-        case 'userAgent':
+                return $_SERVER['REMOTE_ADDR'] ?? null;
+            },
+            'acceptedLanguages' => function() {
 
-            return $this->userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+                if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
 
-        case 'ip':
-
-            return $this->ip = $_SERVER['REMOTE_ADDR'] ?? null;
-
-        case 'acceptedLanguages':
-
-            if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-
-                $langs = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
-            }
-            else {
-
-                $langs = [];
-            }
-
-            foreach ($langs as &$lang) {
-
-                $tmp = explode(';q=', $lang);
-
-                if (isset($tmp[1])) {
-
-                    $lang = [
-                        'language' => $tmp[0],
-                        'priority' => $tmp[1] + 0
-                    ];
+                    $langs = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
                 }
+                else {
+    
+                    $langs = [];
+                }
+
+                foreach ($langs as &$lang) {
+
+                    $tmp = explode(';q=', $lang);
+
+                    if (isset($tmp[1])) {
+
+                        $lang = [
+                            'language' => $tmp[0],
+                            'priority' => $tmp[1] + 0
+                        ];
+                    } else {
+
+                        $lang = [
+                            'language' => $lang,
+                            'priority' => 1
+                        ];
+                    }
+                }
+
+                return $langs;
             }
-
-            return $langs;
-        }
-
-    }
-
-    public function __isset(string $name) {
-
-        switch ($name) {
-        case 'ip':
-        case 'userAgent':
-        case 'host':
-        case 'contentLength':
-        case 'contentType':
-        case 'acceptedLanguages':
-
-            return true;
-
-        default:
-
-            return false;
-        }
+        ];
     }
 
     /**
@@ -220,12 +210,12 @@ class Response {
     public $httpVersion = self::HTTP_VERSION_1_1;
 
     /**
-     * This method sends a header to tell client redirecting to a URL.
+     * 该方法发送 HTTP 重定向头部信息
      *
      * @param string $url
-     *     The target URL to redirect
+     *     重定向的目的 URL
      * @param string $escape
-     *     Whether should encode this URL.
+     *     可选参数，是否对参数1进行转义编码，默认为 false。
      */
     public function redirect($url, $escape = false) {
 
@@ -234,7 +224,7 @@ class Response {
     }
 
     /**
-     * Send a HTTP error status code.
+     * 发出 HTTP 错误号
      *
      * @param integer $errno
      */
@@ -297,7 +287,7 @@ class Response {
     }
 
     /**
-     * This method sends a raw HTTP header info.
+     * 输出一句 HTTP 头信息。
      *
      * @param string $head
      */
@@ -308,10 +298,10 @@ class Response {
     }
 
     /**
-     * This method helps setup the filename for HTTP download.
+     * 设置输出的下载文件名。
      *
      * @param string $fn
-     *     The target name to be output.
+     *     待设置的文件名
      */
     public function setDownloadName($fn) {
 

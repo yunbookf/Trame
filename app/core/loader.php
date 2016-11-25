@@ -17,9 +17,11 @@ require T_CONFIG_ROOT . 'links.php';
 require T_CONFIG_ROOT . 'version.php';
 require T_CONFIG_ROOT . 'router.php';
 require T_CORE_ROOT . 'langext.php';
+require T_CORE_ROOT . 'di.php';
 require T_CORE_ROOT . 'http.php';
 require T_CORE_ROOT . 'action.php';
 require T_CORE_ROOT . 'msg.php';
+require T_CORE_ROOT . 'model.php';
 require T_CORE_ROOT . 'service.php';
 
 define('TIMENOW', $_SERVER['REQUEST_TIME']);

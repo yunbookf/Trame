@@ -186,9 +186,10 @@ SQL
      * 捕获，则会被记录到 /logs/sql.failure.log。
      * 
      * @throws \T\Msg\SQLFailure
+     * 
      * @return \PDOStatement
      */
-    public function query(string $sql): \PDOStatement {
+    public function query(string $sql) {
 
         $result = parent::query($sql);
 

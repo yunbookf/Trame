@@ -2,7 +2,7 @@
 
 namespace T\Msg;
 
-use T\Core\IMessage, \T\HTTP as http;
+use T\Msg\IMessage, \T\HTTP as http;
 
 class CacheFailure extends IMessage {
 

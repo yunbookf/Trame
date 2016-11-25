@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace T\Msg;
 
-use T\Core\IMessage, \T\HTTP as http;
+use T\Msg\IMessage, \T\HTTP as http;
 
 class ServiceFailure extends IMessage {
 

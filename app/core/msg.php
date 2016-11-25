@@ -1,7 +1,7 @@
 <?php
 declare (strict_types = 1);
 
-namespace T\Core;
+namespace T\Msg;
 
 use \T\Service\Logger;
 
