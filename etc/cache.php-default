@@ -7,8 +7,10 @@ const CACHE = [
     ],
 //    'redis' => [
 //        'engine' => 'redis',
-//        'host' => '127.0.0.1',
-//        'port' => 6379,
-//        'password' => '' # 可选，无密码请注释掉本行
+//        'host' => '127.0.0.1',              # 服务器 IP
+//        'port' => 6379,                     # 端口号
+//        'pconnect' => true,                 # 长链接
+//        'db' => 0,                          # 分库ID
+//        'password' => ''                    # 可选，无密码请注释掉本行
 //    ]
 ];

@@ -3,7 +3,7 @@ declare (strict_types = 1);
 
 namespace T\KVCache;
 
-class apcu extends IConnection {
+class apcu implements IConnection {
 
     public function __construct(array $cfg) {
 
@@ -112,46 +112,14 @@ class apcu extends IConnection {
         return $ret;
     }
 
-    public function multiDel(array $keys, array &$results = null): int {
+    public function multiDel(array $keys): int {
 
-        $res = apcu_delete($keys);
-
-        if ($res) {
-
-            $results = $res;
-
-            return count($keys) - count($res);
-        }
-
-        return count($keys);
+        return count($keys) - count(apcu_delete($keys));
     }
 
-    public function multiSet(array $kvParis, int $expires = 0, array &$results = null): int {
+    public function multiSet(array $kvParis, int $expires = 0): int {
 
-        $res = apcu_store($kvParis, null, $expires);
-
-        if ($res) {
-
-            $results = array_keys($res);
-
-            return count($kvParis) - count($res);
-        }
-
-        return count($kvParis);
-    }
-
-    public function multiAdd(array $kvParis, int $expires = 0, array &$results = null): int {
-
-        $res = apcu_add($kvParis, null, $expires);
-
-        if ($res) {
-
-            $results = array_keys($res);
-
-            return count($kvParis) - count($res);
-        }
-
-        return count($kvParis);
+        return count($kvParis) - count(apcu_store($kvParis, null, $expires));
     }
 
     public function flush(): bool {
@@ -159,6 +127,34 @@ class apcu extends IConnection {
         return apcu_clear_cache();
     }
 
+    public function increase(string $key, int $step = 1): int {
+    
+        $result = apcu_inc($key, $step, $success);
+
+        if (!$success) {
+        
+            throw new CacheFailure(
+                "KVCache: Failed to increase key {$key}."
+            );
+        }
+        
+        return $result;
+    }
+
+    public function decrease(string $key, int $step = 1): int {
+    
+        $result = apcu_dec($key, $step, $success);
+
+        if (!$success) {
+        
+            throw new CacheFailure(
+                "KVCache: Failed to decrease key {$key}."
+            );
+        }
+        
+        return $result;
+    }
+    
     public function keys(string $keyRules = null): array {
 
         $ret = [];
@@ -187,5 +183,10 @@ class apcu extends IConnection {
         }
 
         return (new \APCUIterator(self::compileRule($keyRules)))->getTotalCount();
+    }
+
+    public function ping(): bool {
+
+        return true;
     }
 }

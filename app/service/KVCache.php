@@ -124,9 +124,9 @@ class KVCache extends IService {
 
 namespace T\KVCache;
 
-abstract class IConnection {
+interface IConnection {
 
-    abstract public function __construct(array $config);
+    public function __construct(array $config);
 
     /**
      * 根据 key 从缓存中读取一个值。
@@ -135,7 +135,7 @@ abstract class IConnection {
      * @return any
      *     不存在时返回 null
      */
-    abstract public function get(string $key);
+    public function get(string $key);
 
     /**
      * 根据 key 的泛匹配式搜索并返回对应的键值。
@@ -148,7 +148,7 @@ abstract class IConnection {
      * @return array
      *     返回检索到的 key->value 式数组，没找到任何符合的 key 时返回空数组。
      */
-    abstract public function getEx(string $keyRules): array;
+    public function getEx(string $keyRules): array;
 
     /**
      * 根据 key 数组从缓存中一次读取多对键值。
@@ -157,7 +157,7 @@ abstract class IConnection {
      * @return array
      *     返回检索到的 key->value 式数组，未找到的 key 对应值为 null。
      */
-    abstract public function multiGet(array $keys): array;
+    public function multiGet(array $keys): array;
 
     /**
      * 根据 key 从缓存中删除一个键值。
@@ -165,7 +165,7 @@ abstract class IConnection {
      * @param string $key
      * @return bool
      */
-    abstract public function del(string $key): bool;
+    public function del(string $key): bool;
 
     /**
      * 根据 key 的泛匹配式搜索并删除对应的键值。
@@ -178,7 +178,7 @@ abstract class IConnection {
      * @return int
      *     返回删除的键值数量。
      */
-    abstract public function delEx(string $keyRules): int;
+    public function delEx(string $keyRules): int;
 
     /**
      * 根据 key 数组一次删除多对键值。
@@ -191,7 +191,7 @@ abstract class IConnection {
      * @return int
      *     本方法返回成功删除的键值数量。
      */
-    abstract public function multiDel(array $keys, array &$results = null): int;
+    public function multiDel(array $keys): int;
 
     /**
      * 检查一个键值是否存在
@@ -199,7 +199,7 @@ abstract class IConnection {
      * @param string $key
      * @return bool
      */
-    abstract public function exist(string $key): bool;
+    public function exist(string $key): bool;
 
     /**
      * 向缓存中写入一对键值，如果指定的 key 已经存在，则对应的值会被覆盖掉。
@@ -212,7 +212,7 @@ abstract class IConnection {
      * @return bool
      *     成功返回 true
      */
-    abstract public function set(string $key, $value, int $expires = 0): bool;
+    public function set(string $key, $value, int $expires = 0): bool;
 
     /**
      * 向缓存一次写入多对键值。如果指定的 key 已经存在，则对应的值会被覆盖掉。
@@ -227,22 +227,17 @@ abstract class IConnection {
      * @return int
      *     返回成功写入的键值对数量。
      */
-    abstract public function multiSet(array $kvParis, int $expires = 0, array &$results = null): int;
+    public function multiSet(array $kvParis, int $expires = 0): int;
 
     /**
-     * 向缓存一次写入多对键值。如果指定的 key 已经存在，则写入失败。
+     * 使一个键值自增。
      * 
-     * @param array $kvParis
-     *     键值对数组
-     * @param int $expires
-     *     有效期，单位为秒。0 为默认值，表示永不过期。
-     * @param array &$results
-     *     可选参数，用于接收写入失败的key集合
-     * 
+     * @param string $key
+     * @param int $step     自增的步长，默认为 1
      * @return int
-     *     返回成功写入的键值对数量。
+     *     返回自增后的步长。
      */
-    abstract public function multiAdd(array $kvParis, int $expires = 0, array &$results = null): int;
+    public function increase(string $key, int $step = 1): int;
 
     /**
      * 向缓存中写入一对键值，如果指定的 key 已经存在，则写入失败。
@@ -255,7 +250,7 @@ abstract class IConnection {
      * @return bool
      *     成功返回 true
      */
-    abstract public function add(string $keys, $value, int $expires = 0): bool;
+    public function add(string $keys, $value, int $expires = 0): bool;
 
     /**
      * 统计缓存中有多少键值对，如果给第一个参数传递一个泛匹配式，则搜索并返回匹配的键值对数量。
@@ -268,7 +263,7 @@ abstract class IConnection {
      * @return int
      * 
      */
-    abstract public function count(string $keyRules = null): int;
+    public function count(string $keyRules = null): int;
 
     /**
      * 获取缓存中的key数组，如果给第一个参数传递一个泛匹配式，则搜索并匹配对应的 key。
@@ -280,14 +275,14 @@ abstract class IConnection {
      *
      * @return string[]
      */
-    abstract public function keys(string $keyRules = null): array;
+    public function keys(string $keyRules = null): array;
 
     /**
      * 清空缓存。
      * 
      * @return bool
      */
-    abstract public function flush(): bool;
+    public function flush(): bool;
 
-
+    public function ping(): bool;
 }
