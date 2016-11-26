@@ -34,7 +34,7 @@ class apcu implements IConnection {
 
     public function set(string $key, $value, int $expires = 0): bool {
 
-        return apcu_store($key, $value);
+        return apcu_store($key, $value, $expires);
     }
 
     public function del(string $key): bool {
