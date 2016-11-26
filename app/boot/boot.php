@@ -4,7 +4,7 @@ namespace T;
 
 require 'app/core/loader.php';
 
-$__BOOTER = function() {
+return function() {
 
     global $__BOOTER;
 
@@ -29,8 +29,8 @@ $__BOOTER = function() {
     $className = require ($actionInfo['path']);
 
     $action = new $className();
+    $args = $actionInfo['args'];
 
-    $action($actionInfo['args']);
+    unset($className, $router, $actionInfo);
+    $action($args);
 };
-
-$__BOOTER();
