@@ -1,7 +1,11 @@
 <?php
 namespace T\Config;
 
-const DATABASE = [
+const DB_SETTINGS = [
+    'sql-cache-expires' => 0
+];
+
+const DB_SERVERS = [
     'mysql' => [
         'engine' => 'mysql',
 // -- optional {
