@@ -23,22 +23,14 @@ class DevTest extends IAction {
 
         $this->response->setContentType('text/palin');
         echo $this->db->sql('test', function(\T\TDBI\SQLBuilder $sql) {
-            $sql->select('id')->from('torrents')->join('users')->on([
-                '@torrents.user' => 'users.id'
-            ])->join('comments')->on([
-                '@comments.tid' => 'torrent.id'
+            $sql->update()->from('users')->join('ratios')->on([
+                'ratios.type' => 'dollar2rmb'
+            ])->set([
+                '@rmb' => 'dollar * ratios.ratio',
+                'dollar' => null
             ])->where([
-                '`user`' => 123,
-                '!@`reg_date`' => 'NOW()',
-                '#or' => [
-                    '`ip`' => '127.0.0.1',
-                    '#and' => [
-                        '`mac`' => 'ff:ff:ff:ff:ff:ff:ff:ff',
-                        '!`country`' => 'uk'
-                    ]
-                ],
-                '`user` IS NOT NULL'
-            ])->end();
+                'id' => 123
+            ])->limit(1)->end();
         })->getSQL();
         return 0;
     }

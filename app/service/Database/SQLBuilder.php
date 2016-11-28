@@ -13,7 +13,7 @@ namespace T\TDBI;
 
 use \T\Msg\SQLFailure;
 
-class SQLBuilder {
+abstract class ISQLBuilder {
 
     const SQL_AC_SELECT = 0;
 
@@ -28,6 +28,49 @@ class SQLBuilder {
     protected $sql;
 
     protected $action;
+
+    public function end(): SQLBuilder {
+    
+        if ($this->sql) {
+            return $this;
+        }
+    
+        if (!isset($this->table, $this->action)) {
+    
+            throw new SQLFailure(
+    
+                'SQLBuilder: SQL is not completed.'
+            );
+        }
+    
+        switch ($this->action) {
+        case self::SQL_AC_DELETE: $this->genDeleteSQL(); break;
+
+        case self::SQL_AC_SELECT: $this->genSelectSQL(); break;
+
+        case self::SQL_AC_UPDATE: $this->genUpdateSQL(); break;
+
+        case self::SQL_AC_INSERT: $this->genInsertSQL(); break;
+
+        case self::SQL_AC_INSERT_MULTI: $this->genMInsertSQL(); break;
+        }
+    
+        $this->cleanUp();
+        return $this;
+    }
+    
+    public function getSQL(): string {
+    
+        if (!$this->sql) {
+    
+            $this->end();
+        }
+    
+        return $this->sql;
+    }
+}
+
+class SQLBuilder extends ISQLBuilder {
 
     protected $fields;
 
@@ -66,13 +109,30 @@ class SQLBuilder {
 
     }
 
-    public function insert(array $fields = null): SQLBuilder {
+    public function update(): SQLBuilder {
 
-        $this->action = self::SQL_AC_SELECT;
+        $this->action = self::SQL_AC_UPDATE;
+
+        return $this;
+    }
+
+    public function delete(): SQLBuilder {
+
+        $this->action = self::SQL_AC_DELETE;
+
+        return $this;
+    }
+
+    public function insert(array $fields = null): SQLBuilder {
 
         if (is_array($fields)) {
 
+            $this->action = self::SQL_AC_INSERT_MULTI;
             $this->fields = $fields;
+        }
+        else {
+
+            $this->action = self::SQL_AC_INSERT;
         }
 
         return $this;
@@ -114,6 +174,8 @@ class SQLBuilder {
         $this->limitOffset = $offset;
 
         $this->limit = $number;
+
+        return $this;
     }
 
     public function orderBy(array $orders): SQLBuilder {
@@ -134,6 +196,7 @@ class SQLBuilder {
             $this->orders
         );
     }
+
     protected static function escapeValue($v): string {
 
         if (is_array($v)) {
@@ -344,17 +407,49 @@ class SQLBuilder {
         return $this;
     }
 
+    public function set(array $conds): SQLBuilder {
+
+        if (!$this->updates) {
+
+            $this->updates = [];
+        }
+
+        foreach ($conds as $key => $value) {
+
+            if (is_int($key)) {
+
+                $this->updates[] = $value;
+
+                continue;
+            }
+
+            switch ($key[0]) {
+            case '@':
+
+                $this->updates[] = substr($key, 1) . ' = ' . $value;
+
+                break;
+
+            default:
+
+                $this->updates[] = $key . ' = ' . self::escapeValue($value);
+            }
+        }
+
+        return $this;
+    }
+
     protected function genLimitString(): string {
 
         if ($this->limit) {
 
             if ($this->limitOffset) {
 
-                return " LIMIT {$this->limit}";
+                return " LIMIT {$this->limitOffset}, {$this->limit}";
 
             } else {
 
-                return " LIMIT {$this->limitOffset}, {$this->limit}";
+                return " LIMIT {$this->limit}";
             }
         }
         
@@ -395,6 +490,18 @@ class SQLBuilder {
         return '';
     }
 
+    protected function genUpdateSQL() {
+
+        $where = $this->where ? ' WHERE ' . $this->where : '';
+        $join = $this->genJoinString();
+        $limit = $this->genLimitString();
+        $order = $this->genOrderString();
+
+        $sets = join(',', $this->updates);
+
+        $this->sql = "UPDATE {$this->table}{$join} SET {$sets}{$where}{$limit}";
+    }
+
     protected function genSelectSQL() {
 
         $where = $this->where ? ' WHERE ' . $this->where : '';
@@ -403,7 +510,6 @@ class SQLBuilder {
         $order = $this->genOrderString();
 
         $this->sql = "SELECT {$this->fields} FROM {$this->table}{$join}{$where}{$order}{$limit}";
-
     }
 
     protected function genDeleteSQL() {
@@ -413,49 +519,6 @@ class SQLBuilder {
         $limit = $this->genLimitString();
 
         $this->sql = "DELETE FROM {$this->table}{$where}{$limit}";
-
     }
 
-    public function end(): SQLBuilder {
-
-        if ($this->sql) {
-            return $this;
-        }
-
-        if (!isset($this->table, $this->action)) {
-
-            throw new SQLFailure(
-
-                'SQLBuilder: SQL is not completed.'
-            );
-        }
-
-        switch ($this->action) {
-        case self::SQL_AC_DELETE: $this->genDeleteSQL(); break;
-
-        case self::SQL_AC_SELECT: $this->genSelectSQL(); break;
-
-        case self::SQL_AC_UPDATE: $this->genUpdateSQL(); break;
-
-        case self::SQL_AC_INSERT: $this->genInsertSQL(); break;
-
-        case self::SQL_AC_INSERT_MULTI: $this->genMInsertSQL(); break;
-        }
-
-        $this->cleanUp();
-        return $this;
-    }
-
-    public function getSQL(): string {
-
-        if (!$this->sql) {
-
-            throw new SQLFailure(
-
-                'SQLBuilder: SQL is not completed.'
-            );
-        }
-
-        return $this->sql;
-    }
 }

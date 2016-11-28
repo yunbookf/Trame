@@ -219,7 +219,6 @@ SQL
 
             if ($sql = $cache->get($id)) {
 
-                echo 'SQL Fetched From cache', PHP_EOL;
                 return $sql;
             }
         }
