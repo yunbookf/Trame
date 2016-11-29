@@ -29,7 +29,7 @@ abstract class ISQLBuilder {
 
     protected $action;
 
-    public function end(): SQLBuilder {
+    public function end(): ISQLBuilder {
     
         if ($this->sql) {
             return $this;
@@ -50,15 +50,15 @@ abstract class ISQLBuilder {
 
         case self::SQL_AC_UPDATE: $this->genUpdateSQL(); break;
 
-        case self::SQL_AC_INSERT: $this->genInsertSQL(); break;
+        case self::SQL_AC_INSERT: 
 
-        case self::SQL_AC_INSERT_MULTI: $this->genMInsertSQL(); break;
+        case self::SQL_AC_INSERT_MULTI: $this->genInsertSQL(); break;
         }
     
         $this->cleanUp();
         return $this;
     }
-    
+
     public function getSQL(): string {
     
         if (!$this->sql) {
@@ -68,6 +68,14 @@ abstract class ISQLBuilder {
     
         return $this->sql;
     }
+
+    abstract protected function genInsertSQL();
+
+    abstract protected function genUpdateSQL();
+
+    abstract protected function genSelectSQL();
+
+    abstract protected function genDeleteSQL();
 }
 
 class SQLBuilder extends ISQLBuilder {
@@ -88,7 +96,9 @@ class SQLBuilder extends ISQLBuilder {
 
     protected $orders;
 
-    public function select($fields = null): SQLBuilder {
+    protected $inserts;
+
+    public function select($fields = null): ISQLBuilder {
 
         $this->action = self::SQL_AC_SELECT;
 
@@ -109,21 +119,21 @@ class SQLBuilder extends ISQLBuilder {
 
     }
 
-    public function update(): SQLBuilder {
+    public function update(): ISQLBuilder {
 
         $this->action = self::SQL_AC_UPDATE;
 
         return $this;
     }
 
-    public function delete(): SQLBuilder {
+    public function delete(): ISQLBuilder {
 
         $this->action = self::SQL_AC_DELETE;
 
         return $this;
     }
 
-    public function insert(array $fields = null): SQLBuilder {
+    public function insert(array $fields = null): ISQLBuilder {
 
         if (is_array($fields)) {
 
@@ -139,7 +149,41 @@ class SQLBuilder extends ISQLBuilder {
 
     }
 
-    public function join(string $table, string $type = 'INNER'): SQLBuilder {
+    public function multiValues(array $rows): ISQLBuilder {
+
+        foreach ($rows as $row) {
+
+            $this->values($row);
+        }
+
+        return $this;
+    }
+
+    public function values(array $keyValues): ISQLBuilder {
+
+        if (!$this->inserts) {
+
+            $this->inserts = [];
+        }
+
+        if (!$this->fields) {
+
+            $this->fields = array_keys($keyValues);
+        }
+
+        $row = [];
+
+        foreach ($this->fields as $key) {
+
+            $row[] = self::escapeValue($keyValues[$key]);
+        }
+
+        $this->inserts[] = '(' . join(',', $row) . ')';
+
+        return $this;
+    }
+
+    public function join(string $table, string $type = 'INNER'): ISQLBuilder {
 
         if (!$this->joins) {
 
@@ -155,21 +199,21 @@ class SQLBuilder extends ISQLBuilder {
         return $this;
     }
 
-    public function into(string $table): SQLBuilder {
+    public function into(string $table): ISQLBuilder {
 
         $this->table = $table;
 
         return $this;
     }
 
-    public function from(string $table): SQLBuilder {
+    public function from(string $table): ISQLBuilder {
 
         $this->table = $table;
 
         return $this;
     }
 
-    public function limit(int $number, int $offset = null): SQLBuilder {
+    public function limit(int $number, int $offset = null): ISQLBuilder {
 
         $this->limitOffset = $offset;
 
@@ -178,7 +222,7 @@ class SQLBuilder extends ISQLBuilder {
         return $this;
     }
 
-    public function orderBy(array $orders): SQLBuilder {
+    public function orderBy(array $orders): ISQLBuilder {
 
         $this->orders = $orders;
     }
@@ -195,6 +239,10 @@ class SQLBuilder extends ISQLBuilder {
             $this->limitOffset,
             $this->orders
         );
+
+        if ($this->action !== self::SQL_AC_INSERT_MULTI) {
+            unset($this->inserts);
+        }
     }
 
     protected static function escapeValue($v): string {
@@ -392,7 +440,7 @@ class SQLBuilder extends ISQLBuilder {
 
     }
 
-    public function on(array $conds): SQLBuilder {
+    public function on(array $conds): ISQLBuilder {
 
         $this->joins[count($this->joins) - 1]['on'] = self::compileConditions($conds, ' AND ', false);
 
@@ -400,14 +448,14 @@ class SQLBuilder extends ISQLBuilder {
 
     }
 
-    public function where(array $conds): SQLBuilder {
+    public function where(array $conds): ISQLBuilder {
 
         $this->where = self::compileConditions($conds, ' AND ', false);
 
         return $this;
     }
 
-    public function set(array $conds): SQLBuilder {
+    public function set(array $conds): ISQLBuilder {
 
         if (!$this->updates) {
 
@@ -510,6 +558,24 @@ class SQLBuilder extends ISQLBuilder {
         $order = $this->genOrderString();
 
         $this->sql = "SELECT {$this->fields} FROM {$this->table}{$join}{$where}{$order}{$limit}";
+    }
+
+    protected function genInsertSQL() {
+
+        $where = $this->where ? ' WHERE ' . $this->where : '';
+        $join = $this->genJoinString();
+        $limit = $this->genLimitString();
+        $fields = join(',', $this->fields);
+
+        $this->sql = "INSERT INTO {$this->table}({$fields}) VALUES";
+        if ($this->action != self::SQL_AC_INSERT_MULTI) {
+
+            $this->sql .= join(',', $this->inserts);
+        }
+        else {
+
+            $this->sql = "INSERT INTO {$this->table}({$fields}) VALUES";
+        }
     }
 
     protected function genDeleteSQL() {
