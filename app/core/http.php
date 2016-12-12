@@ -199,6 +199,32 @@ class Request {
 
     }
 
+    /**
+     * This method checks if a WWW-Authentication existing.
+     *
+     * @return bool return ture if a WWW-Authentication header info exists.
+     */
+    public function hasAuthentication(): bool {
+    
+        return isset($_SERVER['HTTP_AUTHORIZATION']);
+    
+    }
+    
+    /**
+     * This method returns the WWW-Authentication info, as fields username
+     * and password in an array.
+     *
+     * @return array
+     */
+    public function getAuthentication(): array {
+    
+        $rtn = [];
+        list ($rtn['username'], $rtn['password']) = explode(':',
+            base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+        return $rtn;
+    
+    }
+    
 }
 
 class Response {
@@ -217,7 +243,7 @@ class Response {
      * @param string $escape
      *     可选参数，是否对参数1进行转义编码，默认为 false。
      */
-    public function redirect($url, $escape = false) {
+    public function redirect(string $url, bool $escape = false) {
 
         header('location: ' . ($escape ? urlencode($url) : $url));
 
@@ -228,7 +254,7 @@ class Response {
      *
      * @param integer $errno
      */
-    public function sendError($errno) {
+    public function sendError(int $errno) {
 
         header("HTTP/{$this->httpVersion} {$errno}");
 
@@ -241,37 +267,10 @@ class Response {
      * @param string $tips
      *     The tips text when authenticating.
      */
-    public function authenticate($tips) {
+    public function authenticate(string $tips) {
 
         header('WWW-Authenticate: Basic realm="' . $tips . '"');
         $this->raiseError(UNAUTHORIZED);
-
-    }
-
-    /**
-     * This method checks if a WWW-Authentication existing.
-     *
-     * @return bool return ture if a WWW-Authentication header info exists.
-     */
-    public function hasAuthentication() {
-
-        return isset($_SERVER['HTTP_AUTHORIZATION']);
-
-    }
-
-    /**
-     * This method returns the WWW-Authentication info, as fields username
-     * and password in an array.
-     *
-     * @return array
-     */
-    public function getAuthentication() {
-
-        $rtn = [];
-        list ($rtn['username'], $rtn['password']) = explode(':',
-            base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
-        return $rtn;
-
     }
 
     /**
@@ -280,10 +279,9 @@ class Response {
      * @param string $type
      *     The content type to be sent
      */
-    public function setContentType($type) {
+    public function setContentType(string $type) {
 
         header('Content-Type: ' . $type);
-
     }
 
     /**
@@ -303,7 +301,7 @@ class Response {
      * @param string $fn
      *     待设置的文件名
      */
-    public function setDownloadName($fn) {
+    public function setDownloadName(string $fn) {
 
         $_SERVER['HTTP_USER_AGENT'] = strtolower($_SERVER['HTTP_USER_AGENT']);
 
