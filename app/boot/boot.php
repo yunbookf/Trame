@@ -32,5 +32,5 @@ return function() {
     $args = $actionInfo['args'];
 
     unset($className, $router, $actionInfo);
-    $action($args);
+    $action->__exec($args);
 };

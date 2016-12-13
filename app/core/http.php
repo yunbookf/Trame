@@ -289,10 +289,19 @@ class Response {
      *
      * @param string $head
      */
-    public function send(string $head) {
+    public function writeHeader(string $field, string $val) {
 
-        header($head);
+        header("$field: $val");
+    }
 
+    /**
+     * 将数据格式化为 JSON 后输出。
+     *
+     * @param string $head
+     */
+    public function json($data) {
+
+        echo json_encode($data, JSON_UNESCAPED_UNICODE);
     }
 
     /**

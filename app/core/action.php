@@ -52,7 +52,7 @@ abstract class IAction {
         ];
     }
 
-    public function __invoke(array $args) {
+    public function __exec(array $args) {
 
         try {
 
