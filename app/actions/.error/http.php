@@ -5,12 +5,13 @@ namespace T\Action;
  * URI: /
  */
 
-class HTTPError400 extends IAction {
+class HTTPError extends IAction {
 
     public function main(array $args): int {
-        header('HTTP/1.1 400 BAD REQUEST');
+
+        $this->response->writeHeader('STATUS', $args[0]);
         return 0;
     }
 }
 
-return HTTPError400::class;
+return HTTPError::class;

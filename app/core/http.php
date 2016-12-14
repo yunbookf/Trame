@@ -256,8 +256,7 @@ class Response {
      */
     public function sendError(int $errno) {
 
-        header("HTTP/{$this->httpVersion} {$errno}");
-
+        $this->writeHeader('STATUS', $errno);
     }
 
     /**
@@ -281,7 +280,7 @@ class Response {
      */
     public function setContentType(string $type) {
 
-        header('Content-Type: ' . $type);
+        $this->writeHeader('Content-Type', $type);
     }
 
     /**
@@ -289,7 +288,7 @@ class Response {
      *
      * @param string $head
      */
-    public function writeHeader(string $field, string $val) {
+    public function writeHeader(string $field, $val) {
 
         header("$field: $val");
     }
@@ -300,6 +299,8 @@ class Response {
      * @param string $head
      */
     public function json($data) {
+
+        $this->setContentType('application/json; charset=utf-8');
 
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
     }

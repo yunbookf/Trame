@@ -8,6 +8,7 @@ return function() {
 
     global $__BOOTER;
 
+    ini_set('display_errors', 'no');
     unset($__BOOTER);
 
     $router = require ('app/core/router.d/default.php');
@@ -21,8 +22,8 @@ return function() {
     } catch (\T\Msg\RouteFailure $e) {
 
         $actionInfo = [
-            'path' => 'app/actions/.error/' . $e->getCode() . '.php',
-            'args' => []
+            'path' => 'app/actions/.error/http.php',
+            'args' => [$e->getCode()]
         ];
     }
 
@@ -30,6 +31,22 @@ return function() {
 
     $action = new $className();
     $args = $actionInfo['args'];
+
+    set_error_handler(function(int $errno, string $errstr, string $errfile, int $errline): bool {
+
+        \T\Service\Logger::write(
+            'error',
+            \T\Service\Logger::FETAL_ERROR,
+            <<<ERROR
+Code: {$errno}
+Detail: {$errstr}
+Position: {$errfile}:{$errline}
+ERROR
+        );
+
+        return true;
+
+    }, E_ALL);
 
     unset($className, $router, $actionInfo);
     $action->__exec($args);
