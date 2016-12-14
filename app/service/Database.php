@@ -8,6 +8,8 @@ declare(strict_types = 1);
 
 namespace T\Service;
 
+use \T\Msg as msg, \T\Config as cfg;
+
 require T_CONFIG_ROOT . 'database.php';
 
 require T_SERVICE_ROOT . 'Database/SQLBuilder.php';
@@ -28,7 +30,7 @@ class Database extends IService {
      * @param string $id 对应的链接命名ID
      *
      * @return \T\TDBI\IDBConnection
-     * @throws \T\Msg\ServiceFailure
+     * @throws msg\ServiceFailure
      */
     public static function connect(array $config, string $id) {
 
@@ -41,7 +43,7 @@ class Database extends IService {
 
         if (!class_exists($driver)) {
 
-            throw new \T\Msg\ServiceFailure(
+            throw new msg\ServiceFailure(
                 'Database: Unknown driver was found - ' . $config['engine']);
         }
 
@@ -53,7 +55,7 @@ class Database extends IService {
         }
         catch (\PDOException $e) {
 
-            throw new \T\Msg\ServiceFailure(
+            throw new msg\ServiceFailure(
                 'Database: Failed to connect to database ' . $id . '. Reason: ' .
                      $e->getMessage());
         }
@@ -67,7 +69,7 @@ class Database extends IService {
      * @param string $id 链接的命名 ID
      *
      * @return \T\TDBI\IDBConnection
-     * @throws \T\Msg\ServiceFailure
+     * @throws msg\ServiceFailure
      */
     public static function get(string $id) {
 
@@ -76,13 +78,13 @@ class Database extends IService {
             return self::$__connPool[$id];
         }
 
-        if (empty(\T\Config\DB_SERVERS[$id])) {
+        if (empty(cfg\DB_SERVERS[$id])) {
 
-            throw new \T\Msg\ServiceFailure(
+            throw new msg\ServiceFailure(
                 'Database: Unknown id was found - ' . $id);
         }
 
-        return self::connect(\T\Config\DB_SERVERS[$id], $id);
+        return self::connect(cfg\DB_SERVERS[$id], $id);
 
     }
 
@@ -149,7 +151,7 @@ abstract class IDBConnection extends \PDO {
      * 本方法执行成功时，返回SQL语句影响的行数。执行失败则抛出异常，如果
      * 该异常未被捕获，则会被记录到 /logs/sql.failure.log。
      *
-     * @throws \T\Msg\SQLFailure
+     * @throws msg\SQLFailure
      * @return int
      */
     public function exec($sql): int {
@@ -161,7 +163,7 @@ abstract class IDBConnection extends \PDO {
             $err = $this->errorInfo();
             $callee = getCallerLine();
             $this->affectedRows = 0;
-            throw new \T\Msg\SQLFailure(
+            throw new msg\SQLFailure(
                 <<<SQL
 SQL: {$sql}
 Error Code: {$err[1]}
@@ -181,7 +183,7 @@ SQL
      * 本方法执行成功时，返回结果集操作对象。执行失败则抛出异常，如果该异常未被
      * 捕获，则会被记录到 /logs/sql.failure.log。
      *
-     * @throws \T\Msg\SQLFailure
+     * @throws msg\SQLFailure
      *
      * @return \PDOStatement
      */
@@ -193,7 +195,7 @@ SQL
 
             $err = $this->errorInfo();
             $callee = getCallerLine();
-            throw new \T\Msg\SQLFailure(
+            throw new msg\SQLFailure(
                 <<<SQL
 SQL: {$sql}
 Error Code: {$err[1]}
@@ -229,7 +231,7 @@ SQL
 
         if ($id) {
 
-            $cache->set($id, $sql, \T\Config\DB_SETTINGS['sql-cache-expires']);
+            $cache->set($id, $sql, cfg\DB_SETTINGS['sql-cache-expires']);
         }
 
         return $sql;
