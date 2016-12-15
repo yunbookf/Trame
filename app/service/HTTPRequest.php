@@ -19,7 +19,7 @@ class HTTPRequest extends IService {
      * @return string
      * @throws \T\Msg\ServiceFailure
      */
-    public static function get(string $url) {
+    public static function get(string $url): string {
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -48,7 +48,7 @@ class HTTPRequest extends IService {
      * @return string
      * @throws \T\Msg\ServiceFailure
      */
-    public static function post(string $url, array $data = []) {
+    public static function post(string $url, array $data = []): string {
 
         $upload = false;
         foreach ($data as $i) {

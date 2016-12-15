@@ -20,7 +20,7 @@ class Aes extends IService {
      *
      * @return string
      */
-    public static function encrypt($original, $key) {
+    public static function encrypt(string $original, string $key): string {
 
         return base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, $original . '#', MCRYPT_MODE_ECB));
 
@@ -35,7 +35,7 @@ class Aes extends IService {
      * @return string
      * @throws \T\Msg\ServiceFailure
      */
-    public static function decrypt($encrypt, $key) {
+    public static function decrypt(string $encrypt, string $key): string {
 
         if ($rtn = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $key, base64_decode($encrypt), MCRYPT_MODE_ECB)) {
             if(strrpos($rtn, '#') !== false) {
