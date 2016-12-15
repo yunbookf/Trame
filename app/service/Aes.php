@@ -10,7 +10,7 @@ namespace T\Service;
  * @author Han Guo Shuai
  *
  */
-class AesCrypto extends IService {
+class Aes extends IService {
 
     /**
      * 通过使用一个 key 加密任意的字符串
@@ -20,7 +20,7 @@ class AesCrypto extends IService {
      *
      * @return string
      */
-    public static function encrypt($original, $key): string{
+    public static function encrypt(string $original, string $key): string {
 
         return base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, $original . '#', MCRYPT_MODE_ECB));
 
@@ -32,19 +32,25 @@ class AesCrypto extends IService {
      * @param string $encrypt 要解密的原始字符串
      * @param string $key 要使用的解密密钥
      *
-     * @return bool|string
+     * @return string
+     * @throws \T\Msg\ServiceFailure
      */
-    public static function decrypt($encrypt, $key) {
+    public static function decrypt(string $encrypt, string $key): string {
 
         if ($rtn = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $key, base64_decode($encrypt), MCRYPT_MODE_ECB)) {
             if(strrpos($rtn, '#') !== false) {
                 // --- 解密后, 最后一位是定位符 #, 后面会有 AES 的填充, 都通通不要.
                 return substr($rtn, 0, strrpos($rtn, '#'));
             } else {
-                return false;
+                throw new \T\Msg\ServiceFailure (
+                    'Aes: 原始数据有误（这不是用 Aes::encrypt 加密的数据）'
+                );
             }
-        } else
-            return false;
+        } else {
+            throw new \T\Msg\ServiceFailure (
+                'Aes: 原始数据有误（解密直接失败）'
+            );
+        }
 
     }
 

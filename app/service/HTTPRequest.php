@@ -16,9 +16,10 @@ class HTTPRequest extends IService {
      *
      * @param string $url 要获取的 URL
      *
-     * @return bool
+     * @return string
+     * @throws \T\Msg\ServiceFailure
      */
-    public static function get(string $url) {
+    public static function get(string $url): string {
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -28,7 +29,9 @@ class HTTPRequest extends IService {
         if ($output) {
             return $output;
         } else {
-            return false;
+            throw new \T\Msg\ServiceFailure (
+                'HTTPRequest: 访问失败'
+            );
         }
 
     }
@@ -42,9 +45,10 @@ class HTTPRequest extends IService {
      * @param array $data
      *            要提交的数据对，若要上传文件，内容前加@
      *
-     * @return boolean | string
+     * @return string
+     * @throws \T\Msg\ServiceFailure
      */
-    public static function post(string $url, array $data = []) {
+    public static function post(string $url, array $data = []): string {
 
         $upload = false;
         foreach ($data as $i) {
@@ -64,7 +68,9 @@ class HTTPRequest extends IService {
         if ($output) {
             return $output;
         } else {
-            return false;
+            throw new \T\Msg\ServiceFailure (
+                'HTTPRequest: 访问失败'
+            );
         }
 
     }
