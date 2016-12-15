@@ -11,14 +11,8 @@ use \T\Service as service, \T\Msg as msg, \T\Model as model;
 class DevTest extends IAction {
 
     public function main(array $args): int {
-        $g = fsockopen('127.0.0.1', 80, $errno, $errstr, 10);
-        fwrite($g, "GET / HTTP/1.1\r
-HOST: trame.local.org\r
-\r
-"
-        );
-        echo fread($g, 2048);
-        fclose($g);
+        $this->response->setContentType('text/plain');
+        echo service\StringUtils::random(32, service\StringUtils::RAND_SRC_CUSTOMIZED, 'abcdef0123456789');
         return 0;
     }
 }
