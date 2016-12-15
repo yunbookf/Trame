@@ -16,7 +16,8 @@ class HTTPRequest extends IService {
      *
      * @param string $url 要获取的 URL
      *
-     * @return bool
+     * @return string
+     * @throws \T\Msg\ServiceFailure
      */
     public static function get(string $url) {
 
@@ -28,7 +29,9 @@ class HTTPRequest extends IService {
         if ($output) {
             return $output;
         } else {
-            return false;
+            throw new \T\Msg\ServiceFailure (
+                'HTTPRequest: 访问失败'
+            );
         }
 
     }
@@ -42,7 +45,8 @@ class HTTPRequest extends IService {
      * @param array $data
      *            要提交的数据对，若要上传文件，内容前加@
      *
-     * @return boolean | string
+     * @return string
+     * @throws \T\Msg\ServiceFailure
      */
     public static function post(string $url, array $data = []) {
 
@@ -64,7 +68,9 @@ class HTTPRequest extends IService {
         if ($output) {
             return $output;
         } else {
-            return false;
+            throw new \T\Msg\ServiceFailure (
+                'HTTPRequest: 访问失败'
+            );
         }
 
     }
