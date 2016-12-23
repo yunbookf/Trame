@@ -120,6 +120,8 @@ class Database extends IService {
 
 namespace T\TDBI;
 
+use \T\Msg as msg, \T\Config as cfg;
+
 abstract class IDBConnection extends \PDO {
 
     /**
@@ -209,15 +211,22 @@ SQL
 
     }
 
-    public function sql($id = null, callable $fn = null): \T\TDBI\SQLBuilder {
+    /**
+     * 
+     * @param string $id
+     * @param callable $fn
+     * @return \T\TDBI\ISQLBuilder | \T\TDBI\SQLMultiInsert | string
+     */
+    public function sql($id = null, callable $fn = null) {
 
         static $cache;
-        if (!$cache) {
-
-            $cache = \T\Service\KVCache::get(\T\Links\CACHE_SQL);
-        }
 
         if ($id) {
+
+            if (!$cache) {
+
+                $cache = \T\Service\KVCache::get(\T\Links\CACHE_SQL);
+            }
 
             if ($sql = $cache->get($id)) {
 
@@ -227,11 +236,16 @@ SQL
 
         $sql = new SQLBuilder();
 
-        $fn && $fn($sql);
+        if ($fn) {
 
-        if ($id) {
+            $fn($sql);
 
-            $cache->set($id, $sql, cfg\DB_SETTINGS['sql-cache-expires']);
+            if ($id) {
+
+                $cache->set($id, $sql->getSQL(), cfg\DB_SETTINGS['sql-cache-expires']);
+            }
+
+            return $sql->getSQL();
         }
 
         return $sql;

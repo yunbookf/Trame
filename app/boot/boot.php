@@ -44,7 +44,7 @@ Position: {$errfile}:{$errline}
 ERROR
         );
 
-        return true;
+        return false;
 
     }, E_ALL);
 

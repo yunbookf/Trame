@@ -93,7 +93,7 @@ class StringUtils extends IService {
     const RAND_SRC_CUSTOMIZED           = 0xFF;
 
     /**
-     * 这个方法根据指定规则生成指定长度的随机字符串。
+     * 根据指定规则生成指定长度的随机字符串。
      * 
      * @param int $len
      *     要生成的字符串长度
@@ -162,5 +162,15 @@ class StringUtils extends IService {
         }
 
         return $ret;
+    }
+
+    /**
+     * 检测一个字符串是否为十六进制字符串
+     * @param string $str
+     * @return bool
+     */
+    public static function isHexString(string $str): bool {
+
+        return preg_match('/^[A-Fa-f0-9]+$/', $str) ? true : false;
     }
 }

@@ -16,7 +16,7 @@ trait TDelayInitializer {
             return $this->{$name} = $this->di[$name]();
         }
 
-        throw new \T\Msg\InvalidInvoke("Property {$name} doesn't exist.");
+        throw new \T\Msg\InvalidProperty("Property {$name} doesn't exist.");
     }
 
     public function __isset(string $name) {

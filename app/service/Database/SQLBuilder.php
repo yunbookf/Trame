@@ -1,5 +1,6 @@
 <?php
 declare (strict_types = 1);
+
 /**
  * 条件规则
  * 
@@ -12,6 +13,24 @@ declare (strict_types = 1);
 namespace T\TDBI;
 
 use \T\Msg\SQLFailure;
+
+class SQLMultiInsert {
+
+    protected $prefix;
+
+    protected $fields;
+
+    public function __construct(string $sqlPrefix, array $fields) {
+
+        $this->prefix = $sqlPrefix;
+        $this->fields = $fields;
+    }
+
+    public function insert(array $data) {
+
+        
+    }
+}
 
 abstract class ISQLBuilder {
 
@@ -28,6 +47,8 @@ abstract class ISQLBuilder {
     protected $sql;
 
     protected $action;
+
+    protected $fields;
 
     public function end(): ISQLBuilder {
     
@@ -59,14 +80,25 @@ abstract class ISQLBuilder {
         return $this;
     }
 
-    public function getSQL(): string {
+    /**
+     * 
+     * @return string | \T\TDBI\SQLMultiInsert
+     */
+    public function getSQL() {
     
         if (!$this->sql) {
     
             $this->end();
         }
-    
-        return $this->sql;
+
+        if ($this->action === self::SQL_AC_INSERT_MULTI) {
+
+            return new SQLMultiInsert($this->sql, $this->fields);
+        }
+        else {
+
+            return $this->sql;
+        }
     }
 
     abstract protected function genInsertSQL();
@@ -76,11 +108,39 @@ abstract class ISQLBuilder {
     abstract protected function genSelectSQL();
 
     abstract protected function genDeleteSQL();
+
+    abstract public function select($fields = null): ISQLBuilder;
+
+    abstract public function update(): ISQLBuilder;
+
+    abstract public function delete(): ISQLBuilder;
+
+    abstract public function insert(array $fields = null): ISQLBuilder;
+
+    abstract public function multiValues(array $rows): ISQLBuilder;
+
+    abstract public function values(array $keyValues): ISQLBuilder;
+
+    abstract public function join(string $table, string $type = 'INNER'): ISQLBuilder;
+
+    abstract public function into(string $table): ISQLBuilder;
+
+    abstract public function from(string $table): ISQLBuilder;
+
+    abstract public function limit(int $number, int $offset = null): ISQLBuilder;
+
+    abstract public function orderBy(array $orders): ISQLBuilder;
+
+    abstract public function on(array $conds): ISQLBuilder;
+
+    abstract public function where(array $conds): ISQLBuilder;
+
+    abstract public function set(array $assigns): ISQLBuilder;
+
+    abstract protected function cleanUp();
 }
 
 class SQLBuilder extends ISQLBuilder {
-
-    protected $fields;
 
     protected $table;
 
@@ -103,6 +163,14 @@ class SQLBuilder extends ISQLBuilder {
         $this->action = self::SQL_AC_SELECT;
 
         if (is_array($fields)) {
+
+            foreach ($fields as $key => &$f) {
+
+                if (is_string($key)) {
+
+                    $f = $key . ' as ' . $f;
+                }
+            }
 
             $this->fields = join(',', $fields);
         }
@@ -230,7 +298,6 @@ class SQLBuilder extends ISQLBuilder {
     protected function cleanUp() {
 
         unset(
-            $this->fields,
             $this->joins,
             $this->where,
             $this->table,
@@ -240,18 +307,34 @@ class SQLBuilder extends ISQLBuilder {
             $this->orders
         );
 
-        if ($this->action !== self::SQL_AC_INSERT_MULTI) {
+        if ($this->action === self::SQL_AC_INSERT_MULTI) {
+
             unset($this->inserts);
+        }
+        else {
+
+            unset($this->fields);
         }
     }
 
-    protected static function escapeValue($v): string {
+    protected static function escapeValue($v, bool $isVar = false): string {
 
         if (is_array($v)) {
 
-            throw new SQLFailure(
-                'SQLBuilder: Array shouldn\'t be used with complex expression.'
-            );
+            if (isset($v['$var'])) {
+
+                return ':' . $v['$var'];
+            }
+            else {
+
+                throw new SQLFailure(
+                    'SQLBuilder: Array shouldn\'t be used with complex expression.'
+                );
+            }
+        }
+        elseif ($isVar) {
+
+            return ':' . $v;
         }
 
         if ($v === null) {
@@ -273,93 +356,113 @@ class SQLBuilder extends ISQLBuilder {
 
     }
 
-    protected static function compileSimpleExpr(
-        string $key,
-        $value,
-        bool $neg = false
+    protected static function compileCondExpr(
+        string $field,
+        string $rel,
+        $value
     ): string {
 
-        if (is_array($value)) {
+        $isVar = ($rel[0] === '%');
+
+        if ($isVar) {
+
+            $rel = substr($rel, 1);
+        }
+
+        switch ($rel) {
+        case '$ge':
+
+            return $field . ' >= ' . self::escapeValue($value, $isVar);
+
+        case '$le':
+
+            return $field . ' <= ' . self::escapeValue($value, $isVar);
+
+        case '$gt':
+
+            return $field . ' > ' . self::escapeValue($value, $isVar);
+
+        case '$lt':
+
+            return $field . ' < ' . self::escapeValue($value, $isVar);
+
+        case '$eq':
+
+            if ($value === null) {
+
+                return $field . ' IS NULL';
+            }
+            else {
+
+                return $field . ' = ' . self::escapeValue($value, $isVar);
+            }
+            
+
+        case '$ne':
+
+            if ($value === null) {
+
+                return $field . ' IS NOT NULL';
+            }
+            else {
+
+                return $field . ' <> ' . self::escapeValue($value, $isVar);
+            }
+
+        case '$in':
+        case '$notIn':
+        case '$except':
 
             foreach ($value as &$item) {
-
+            
                 if (is_string($item)) {
-
+            
                     $item = self::escapeValue($item);
                 }
                 else {
-
+            
                     $item += 0;
                 }
             }
-
+            
             $value = join(',', $value);
+        
+            return $rel == '$in' ? "{$key} IN ({$value})" : "{$key} NOT IN ({$value})";
 
-            if ($neg) {
+        case '$nlike':
+        case '$notLike':
 
-                return "{$key} NOT IN ({$value})";
-            }
-            else {
+            return $field . ' NOT LIKE ' . self::escapeValue($value, $isVar);
 
-                return "{$key} IN ({$value})";
-            }
-        }
-        elseif ($value === null) {
+        case '$like':
 
-            if ($neg) {
+            return $field . ' LIKE ' . self::escapeValue($value, $isVar);
 
-                return $key . ' IS NOT NULL';
-            }
-            else {
+        case '$var':
 
-                return $key . ' IS NULL';
-            }
-        }
-        else {
+            return $field . ' = :' . $value;
 
-            $value = self::escapeValue($value);
+        case '$or':
 
-            if ($neg) {
+            return self::compileConditions($value, ' OR ');
 
-                return "{$key} <> {$value}";
-            }
-            else {
+        case '$notOr':
 
-                return "{$key} = {$value}";
-            }
-        }
+            return 'NOT ' . self::compileConditions($value, ' OR ');
 
-    }
+        case '$and':
 
-    protected static function compileAdvanceExpr(
-        string $key,
-        $value,
-        bool $neg = false
-    ): string {
+            return self::compileConditions($value, ' AND ');
 
-        switch ($key[0]) {
-        case '~':
+        case '$notAnd':
 
-            return substr($key, 1) . ($neg ? ' NOT LIKE ' : ' LIKE ') .
-            self::escapeValue($value);
-
-        case '>':
-
-            return substr($key, 1) . ($neg ? ' >= ' : ' < ') .
-            self::escapeValue($value);
-
-        case '<':
-
-            return substr($key, 1) . ($neg ? ' <= ' : ' > ') .
-            self::escapeValue($value);
-
-        case '@':
-
-            return substr($key, 1) . ($neg ? ' <> ' : ' = ') . $value;
+            return 'NOT ' . self::compileConditions($value, ' AND ');
 
         default:
 
-            return self::compileSimpleExpr($key, $value, $neg);
+            throw new SQLFailure(
+                "Unexpected action {$rel} found."
+            );
         }
 
     }
@@ -380,64 +483,50 @@ class SQLBuilder extends ISQLBuilder {
 
                 continue;
             }
-            switch ($key[0]) {
-            case '#':
+
+            if ($key[0] === '$') {
+
                 switch (substr($key, 1)) {
-                case 'or': // 条件或集
+                case 'notOr':
+                case 'or':
+                case 'and':
+                case 'notAnd':
 
-                    if (!is_array($value)) {
-
-                        throw new SQLFailure(
-                            "SQLBuilder: '{$key}' must be used with conditions array!"
-                        );
-                    }
-
-                    $items[] = self::compileConditions($value, ' OR ');
-
-                    break;
-
-                case 'and': // 条件和集
-
-                    if (!is_array($value)) {
-
-                        throw new SQLFailure(
-                            "SQLBuilder: '{$key}' must be used with conditions array!"
-                        );
-                    }
-
-                    $items[] = self::compileConditions($value, ' AND ');
-
+                    $items[] = self::compileCondExpr('', $key, $value);
                     break;
 
                 default:
 
                     throw new SQLFailure(
-                    "Invalid syntax for SQLBuilder with field '{$key}'.");
+                        "Unexpected action {$key} found."
+                    );
+                }
+            }
+            elseif ($key[0] === '%') {
+
+                if (!is_string($value)) {
+
+                    throw new SQLFailure(
+                        'An array cannot be used as a variable in SQL.'
+                    );
                 }
 
-                break;
-
-            case '@':
-
-                $items[] = substr($key, 1) . ' = ' . $value;
-
-                break;
-
-            case '!':
-
-                $items[] = self::compileAdvanceExpr(substr($key, 1), $value,
-                true);
-
-                break;
-
-            default:
-
-                $items[] = self::compileAdvanceExpr($key, $value);
+                $items[] = substr($key, 1) . ' = :' . $value;
+            }
+            elseif (is_array($value)) {
+            
+                foreach ($value as $rel => $v) {
+            
+                    $items[] = self::compileCondExpr($key, $rel, $v);
+                }
+            }
+            else {
+            
+                $items[] = self::compileCondExpr($key, '$eq', $value);
             }
         }
 
         return $wrap ? '(' . join($dep, $items) . ')' : join($dep, $items);
-
     }
 
     public function on(array $conds): ISQLBuilder {
@@ -455,7 +544,7 @@ class SQLBuilder extends ISQLBuilder {
         return $this;
     }
 
-    public function set(array $conds): ISQLBuilder {
+    public function set(array $assigns): ISQLBuilder {
 
         if (!$this->updates) {
 
@@ -472,9 +561,15 @@ class SQLBuilder extends ISQLBuilder {
             }
 
             switch ($key[0]) {
-            case '@':
+            case '*':
 
                 $this->updates[] = substr($key, 1) . ' = ' . $value;
+
+                break;
+
+            case '%':
+
+                $this->updates[] = substr($key, 1) . ' = :' . $value;
 
                 break;
 

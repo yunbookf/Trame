@@ -5,11 +5,11 @@ namespace T\Msg;
 
 use T\Msg\IMessage, \T\HTTP as http;
 
-class InvalidInvoke extends IMessage {
+class InvalidProperty extends IMessage {
 
     public function handle(http\Request $req, http\Response $resp) {
 
-        $this->message = "Method {$this->message} doesn't exist.";
+        $this->message = "Property {$this->message} doesn't exist.";
         $this->log('bugs');
 
         $resp->sendError(http\INTERNAL_ERROR);

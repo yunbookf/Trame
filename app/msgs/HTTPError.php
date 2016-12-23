@@ -12,6 +12,7 @@ class HTTPError extends IMessage {
 
     public function handle(http\Request $req, http\Response $resp) {
 
+        $this->log('http');
         $resp->writeHeader('STATUS', $this->getCode());
     }
 }
