@@ -22,7 +22,19 @@ class DevTest extends IAction {
     public function main(array $args): int {
 
         $user = $this->users->get(1);
-        echo $user->email;
+
+        $sql = $this->db->sql('test', function(\T\TDBI\SQLBuilder $sql) {
+            $sql->insert(['a', 'b'])->into('tests')->end();
+        });
+        var_dump((string)$sql->multiValues([
+            [
+                'b' => 'aaa',
+                'a' => 123
+            ],[
+                'a' => 123,
+                'b' => 'aaa'
+            ]
+        ]));
 
         return 0;
     }

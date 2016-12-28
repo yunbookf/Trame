@@ -14,11 +14,55 @@ namespace T\TDBI;
 
 use \T\Msg\SQLFailure;
 
-class SQLMultiInsert {
+abstract class ISQLGenerator {
+
+    protected static function escapeValue($v, bool $isVar = false): string {
+    
+        if (is_array($v)) {
+    
+            if (isset($v['$var'])) {
+    
+                return ':' . $v['$var'];
+            }
+            else {
+    
+                throw new SQLFailure(
+                    'SQLBuilder: Array shouldn\'t be used with complex expression.'
+                );
+            }
+        }
+        elseif ($isVar) {
+    
+            return ':' . $v;
+        }
+    
+        if ($v === null) {
+    
+            return 'null';
+        }
+        elseif (is_string($v)) {
+    
+            return '"' . addslashes($v) . '"';
+        }
+        elseif (is_bool($v)) {
+    
+            return $v ? 'true' : 'false';
+        }
+        else {
+    
+            return "{$v}";
+        }
+    
+    }
+}
+
+class SQLMultiInsert extends ISQLGenerator {
 
     protected $prefix;
 
     protected $fields;
+
+    protected $inserts;
 
     public function __construct(string $sqlPrefix, array $fields) {
 
@@ -26,13 +70,52 @@ class SQLMultiInsert {
         $this->fields = $fields;
     }
 
-    public function insert(array $data) {
+    public function reset() {
 
-        
+        $this->inserts = [];
+    }
+
+    public function multiValues(array $data): SQLMultiInsert {
+
+        foreach ($data as $row) {
+
+            $this->values($row);
+        }
+
+        return $this;
+    }
+
+    public function values(array $row): SQLMultiInsert {
+
+        if (!$this->inserts) {
+
+            $this->inserts = [];
+        }
+
+        $tmp = [];
+
+        foreach ($this->fields as $field) {
+
+            $tmp[] = self::escapeValue($row[$field]);
+        }
+
+        $this->inserts[] = '(' . join(',', $tmp) . ')';
+
+        return $this;
+    }
+
+    public function getSQL(): string {
+
+        return $this->prefix . join(',', $this->inserts);
+    }
+
+    public function __toString(): string {
+
+        return $this->getSQL();
     }
 }
 
-abstract class ISQLBuilder {
+abstract class ISQLBuilder extends ISQLGenerator {
 
     const SQL_AC_SELECT = 0;
 
@@ -150,7 +233,7 @@ class SQLBuilder extends ISQLBuilder {
 
     protected $joins;
 
-    protected $limit;
+    protected $limitNum;
 
     protected $limitOffset;
 
@@ -285,7 +368,7 @@ class SQLBuilder extends ISQLBuilder {
 
         $this->limitOffset = $offset;
 
-        $this->limit = $number;
+        $this->limitNum = $number;
 
         return $this;
     }
@@ -302,7 +385,7 @@ class SQLBuilder extends ISQLBuilder {
             $this->where,
             $this->table,
             $this->updates,
-            $this->limit,
+            $this->limitNum,
             $this->limitOffset,
             $this->orders
         );
@@ -315,45 +398,6 @@ class SQLBuilder extends ISQLBuilder {
 
             unset($this->fields);
         }
-    }
-
-    protected static function escapeValue($v, bool $isVar = false): string {
-
-        if (is_array($v)) {
-
-            if (isset($v['$var'])) {
-
-                return ':' . $v['$var'];
-            }
-            else {
-
-                throw new SQLFailure(
-                    'SQLBuilder: Array shouldn\'t be used with complex expression.'
-                );
-            }
-        }
-        elseif ($isVar) {
-
-            return ':' . $v;
-        }
-
-        if ($v === null) {
-
-            return 'null';
-        }
-        elseif (is_string($v)) {
-
-            return '"' . addslashes($v) . '"';
-        }
-        elseif (is_bool($v)) {
-
-            return $v ? 'true' : 'false';
-        }
-        else {
-
-            return "{$v}";
-        }
-
     }
 
     protected static function compileCondExpr(
@@ -551,7 +595,7 @@ class SQLBuilder extends ISQLBuilder {
             $this->updates = [];
         }
 
-        foreach ($conds as $key => $value) {
+        foreach ($assigns as $key => $value) {
 
             if (is_int($key)) {
 
@@ -584,15 +628,15 @@ class SQLBuilder extends ISQLBuilder {
 
     protected function genLimitString(): string {
 
-        if ($this->limit) {
+        if ($this->limitNum) {
 
             if ($this->limitOffset) {
 
-                return " LIMIT {$this->limitOffset}, {$this->limit}";
+                return " LIMIT {$this->limitOffset}, {$this->limitNum}";
 
             } else {
 
-                return " LIMIT {$this->limit}";
+                return " LIMIT {$this->limitNum}";
             }
         }
         

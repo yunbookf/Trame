@@ -6,10 +6,10 @@ require 'app/core/loader.php';
 
 return function() {
 
-    global $__BOOTER;
+    global $__BOOT;
 
     ini_set('display_errors', 'no');
-    unset($__BOOTER);
+    unset($__BOOT);
 
     $router = require ('app/core/router.d/default.php');
 

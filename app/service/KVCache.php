@@ -17,7 +17,7 @@ class KVCache extends IService {
      *
      * @var array
      */
-    protected static $__connPool = [];
+    protected static $connPool = [];
 
     /**
      * 这个方法通过配置连接缓存，并返回一个缓存链接。
@@ -49,7 +49,7 @@ class KVCache extends IService {
         try {
 
             $conn = new $driver($config);
-            self::$__connPool[$id] = $conn;
+            self::$connPool[$id] = $conn;
             return $conn;
         }
         catch (\PDOException $e) {
@@ -76,7 +76,7 @@ class KVCache extends IService {
 
         if (self::check($id)) {
 
-            return self::$__connPool[$id];
+            return self::$connPool[$id];
         }
 
         if (empty(\T\Config\CACHE[$id])) {
@@ -99,7 +99,7 @@ class KVCache extends IService {
      */
     public static function check(string $id): bool {
 
-        return isset(self::$__connPool[$id]);
+        return isset(self::$connPool[$id]);
 
     }
 
@@ -114,8 +114,8 @@ class KVCache extends IService {
 
         if (self::check($id)) {
 
-            self::$__connPool[$id] = null;
-            unset(self::$__connPool[$id]);
+            self::$connPool[$id] = null;
+            unset(self::$connPool[$id]);
         }
 
     }

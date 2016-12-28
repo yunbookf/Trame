@@ -1,5 +1,5 @@
 <?php
 
-$__BOOTER = require ('app/boot/boot.php');
+$__BOOT = require ('app/boot/boot.php');
 
-$__BOOTER();
+$__BOOT();
