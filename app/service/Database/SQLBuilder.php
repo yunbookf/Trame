@@ -427,7 +427,7 @@ class SQLBuilder extends ISQLBuilder {
             
             $value = join(',', $value);
         
-            return $rel == '$in' ? "{$key} IN ({$value})" : "{$key} NOT IN ({$value})";
+            return $rel == '$in' ? "{$field} IN ({$value})" : "{$field} NOT IN ({$value})";
 
         case '$nlike':
         case '$notLike':
@@ -561,21 +561,21 @@ class SQLBuilder extends ISQLBuilder {
             }
 
             switch ($key[0]) {
-            case '*':
+                case '*':
 
-                $this->updates[] = substr($key, 1) . ' = ' . $value;
+                    $this->updates[] = substr($key, 1) . ' = ' . $value;
 
-                break;
+                    break;
 
-            case '%':
+                case '%':
 
-                $this->updates[] = substr($key, 1) . ' = :' . $value;
+                    $this->updates[] = substr($key, 1) . ' = :' . $value;
 
-                break;
+                    break;
 
-            default:
+                default:
 
-                $this->updates[] = $key . ' = ' . self::escapeValue($value);
+                    $this->updates[] = $key . ' = ' . self::escapeValue($value);
             }
         }
 
@@ -657,9 +657,6 @@ class SQLBuilder extends ISQLBuilder {
 
     protected function genInsertSQL() {
 
-        $where = $this->where ? ' WHERE ' . $this->where : '';
-        $join = $this->genJoinString();
-        $limit = $this->genLimitString();
         $fields = join(',', $this->fields);
 
         $this->sql = "INSERT INTO {$this->table}({$fields}) VALUES";
@@ -676,7 +673,6 @@ class SQLBuilder extends ISQLBuilder {
     protected function genDeleteSQL() {
 
         $where = $this->where ? ' WHERE ' . $this->where : '';
-        $join = $this->genJoinString();
         $limit = $this->genLimitString();
 
         $this->sql = "DELETE FROM {$this->table}{$where}{$limit}";
